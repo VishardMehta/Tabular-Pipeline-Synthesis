@@ -8,6 +8,7 @@ here so a later refactor cannot quietly remove them.
 from __future__ import annotations
 
 import io
+import json
 
 import pytest
 
@@ -29,6 +30,53 @@ def test_upload_returns_columns(client):
     body = response.json()
     assert body["filename"] == "churn.csv"
     assert len(body["columns"]) == body["n_columns"]
+
+
+def test_upload_persists_the_dataset(client):
+    """The id the client gets back has to resolve on the next request."""
+    from app import storage
+
+    body = client.post(
+        "/api/datasets",
+        files={"file": ("churn.csv", io.BytesIO(b"a,b\n1,2\n3,4\n"), "text/csv")},
+    ).json()
+    row = storage.get_dataset(body["dataset_id"])
+    assert row is not None
+    assert row["filename"] == "churn.csv"
+    assert json.loads(row["columns_json"]) == ["a", "b"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "status", "code"),
+    [
+        (b"id,age,id\n1,2,3\n", 422, "DUPLICATE_COLUMNS"),
+        (b"", 422, "EMPTY_DATASET"),
+        (b"a,b\n", 422, "HEADER_ONLY"),
+        (b"only\n1\n", 422, "SINGLE_COLUMN"),
+    ],
+)
+def test_ingest_rejections_use_the_error_envelope(client, payload, status, code):
+    """One body shape for every failure, so the frontend never branches on which
+    layer refused the request."""
+    response = client.post(
+        "/api/datasets",
+        files={"file": ("bad.csv", io.BytesIO(payload), "text/csv")},
+    )
+    assert response.status_code == status
+    body = response.json()
+    assert set(body) == {"error"}
+    assert body["error"]["code"] == code
+    assert body["error"]["retryable"] is False
+    assert body["error"]["message"]
+
+
+def test_rejection_message_names_the_offending_columns(client):
+    """A code tells the frontend what happened. The message tells the person."""
+    response = client.post(
+        "/api/datasets",
+        files={"file": ("bad.csv", io.BytesIO(b"id,age,id\n1,2,3\n"), "text/csv")},
+    )
+    assert "id" in response.json()["error"]["message"]
 
 
 def test_profile_echoes_target(client):

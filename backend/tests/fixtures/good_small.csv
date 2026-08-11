@@ -1,0 +1,6 @@
+id,age,city,signup,churn
+1,30,Leeds,2024-01-01,yes
+2,41,York,2024-02-11,no
+3,25,Leeds,2024-03-02,yes
+4,37,Hull,2024-04-19,no
+5,52,York,2024-05-30,yes

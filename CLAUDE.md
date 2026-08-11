@@ -14,6 +14,19 @@ llm.py accepts a ProfileCard, never a DataFrame. Do not change that signature.
   MVP-1 does not execute code, so any displayed score would be fabricated.
 - CSV reads use the pandas C engine everywhere, including in generated code.
 - No em dashes in any output, comments, or docs. Use hyphens.
+- `.env.example` contains variable names with empty values. Never a real
+  value, not even temporarily. Real values go in `.env`, which is gitignored.
+
+## models.py has two audiences
+`#` comments are for humans: rationale, tradeoffs, why a number. Docstrings and
+`Field(description=...)` are prompt surface, sent to the model as instruction
+text whenever a class is used as a response_schema. Never put internal
+reasoning in a docstring.
+
+Field descriptions are discarded on enum-typed and single-nested-model fields,
+because the SDK inlines the `$ref` and drops its siblings. Those fields are
+steered by the enum or model docstring instead. See
+docs/spike-01-gemini-structured-output.md.
 
 ## GenResult field order is load-bearing
 Strategy fields must precede `code` so the model plans before it writes.
@@ -22,3 +35,8 @@ Do not reorder.
 ## Testing
 Profiler and validator changes require a fixture. Never assert on exact LLM
 prose; assert structural invariants only.
+
+A known trap deferred to a later stage gets a `pytest.mark.xfail(strict=True)`
+test now, with a reason naming the stage that must fix it. A documented trap
+with no failing test is still a trap. Strict, so it also fails once the trap is
+fixed and the marker is stale.

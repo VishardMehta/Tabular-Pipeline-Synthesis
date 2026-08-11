@@ -240,6 +240,38 @@ SAMPLE_THRESHOLD = 200_000
 # the fix is a resident-memory guard, not a smaller number here.
 MAX_FILE_MB = 50
 
+# Maximum in-memory size of the parsed frame, in megabytes, measured with
+# df.memory_usage(deep=True).sum(). Exceeding it rejects with
+# DATASET_TOO_LARGE_IN_MEMORY.
+#
+# DERIVED FROM MAX_FILE_MB, NOT CHOSEN INDEPENDENTLY. It is MAX_FILE_MB times
+# the roughly 10x expansion that object-dtype string columns undergo when pandas
+# materialises them. If MAX_FILE_MB changes, this number has to change with it,
+# or the two limits start contradicting each other and one rejects files the
+# other accepts for reasons nobody can reconstruct later.
+#
+# 50 * 10 = 500.
+#
+# Lower (250): rejects legitimate files. A 30MB CSV of mostly free text clears
+# the disk check easily and lands near 300MB in memory, and that is an ordinary
+# dataset, not an abusive one. Higher (1000): profiling transiently copies for
+# value_counts, the correlation matrix, astype conversions and sampling, so peak
+# runs about 2 to 2.5x the resident frame. A 1GB frame implies 2.5GB peak, which
+# swaps or dies on an 8GB laptop also running a browser and an editor. 500
+# resident is about 1.25GB peak, which survives.
+#
+# WHAT THIS DOES NOT DO: it is a post-parse check, so the memory is already
+# allocated by the time it can be measured. It protects the profiler from
+# working on a frame that should never have been accepted. It cannot protect the
+# parse itself. Genuinely closing that needs chunked reading with running
+# accounting, which chunksize supports on the C engine and which complicates
+# ingest considerably. The disk check catches the common case first.
+#
+# Also note memory_usage(deep=True) walks every Python string object, so it is
+# O(total characters) rather than free. One-time cost, but on a wide object
+# frame it is the same order as the parse.
+MAX_MEMORY_MB = 500
+
 # Maximum accepted column count. Above this the upload is rejected outright.
 #
 # 1,000 is a structural sanity bound: a tabular file wider than this is a
