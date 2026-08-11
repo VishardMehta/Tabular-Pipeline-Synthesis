@@ -1,4 +1,4 @@
-"""Contract tests for the stage 0 routes.
+"""Contract tests for the API routes.
 
 These assert structure, never prose. Every fixture must validate against the
 real schema, and the invariants that the architecture depends on are asserted
@@ -12,7 +12,14 @@ import json
 
 import pytest
 
-from app.models import GenResult, ValidationSeverity
+from app.errors import ErrorCode
+from app.models import (
+    CandidateModel,
+    DroppedColumn,
+    GenResult,
+    PreprocessingStep,
+    ValidationSeverity,
+)
 
 
 def test_health(client):
@@ -122,17 +129,101 @@ def test_profile_on_unknown_dataset_id_returns_dataset_expired(client):
     assert response.json()["error"]["code"] == "DATASET_EXPIRED"
 
 
-def test_generate_returns_result_and_validation(client):
-    response = client.post("/api/datasets/abc/generate", json={})
+def _stub_gen_result_json(*, target_column: str, problem_type: str, primary_metric: str) -> str:
+    """A minimal but schema-valid GenResult, standing in for a real Gemini
+    response so /generate can be exercised without a key, a cassette, or the
+    network. See tests/test_llm.py for cassette-backed tests of the real
+    provider and tests/conftest.py's stub_provider fixture for the wiring."""
+    return GenResult(
+        problem_type=problem_type,
+        target_column=target_column,
+        primary_metric=primary_metric,
+        dropped_columns=[DroppedColumn(column="id", reason="Unique identifier, no signal.")],
+        preprocessing=[
+            PreprocessingStep(
+                step="one-hot encoding", columns=["plan"], rationale="Nominal category."
+            )
+        ],
+        candidate_models=[
+            CandidateModel(
+                name="LogisticRegression", library="scikit-learn", rationale="Baseline."
+            ),
+            CandidateModel(
+                name="HistGradientBoostingClassifier",
+                library="scikit-learn",
+                rationale="Stronger default.",
+            ),
+        ],
+        validation_strategy="Five-fold stratified cross-validation.",
+        analysis_summary="A small synthetic dataset used only to exercise the API contract.",
+        risks=["This is stub output for a test, not a real strategy."],
+        code="import pandas as pd\ndf = pd.read_csv('data.csv', engine='c')\n",
+    ).model_dump_json()
+
+
+def profile_and_generate(client, stub_provider, *, target_column: str = "churn"):
+    """Upload, profile, and generate against a stubbed provider - the full
+    round trip /generate now depends on, since it reads back the profile
+    /profile persisted rather than accepting one from the caller."""
+    dataset_id = upload(client)
+    profile = client.post(
+        f"/api/datasets/{dataset_id}/profile", json={"target_column": target_column}
+    ).json()["profile"]
+    stub_provider.text = _stub_gen_result_json(
+        target_column=profile["target_column"],
+        problem_type=profile["problem_type"],
+        primary_metric=profile["primary_metric"],
+    )
+    response = client.post(f"/api/datasets/{dataset_id}/generate", json={})
+    return dataset_id, response
+
+
+def test_generate_returns_result_and_validation(client, stub_provider):
+    _, response = profile_and_generate(client, stub_provider)
     assert response.status_code == 200
     body = response.json()
     assert body["result"]["code"]
     assert body["validation"]["checks"]
 
 
-def test_generate_result_field_order_is_preserved_over_the_wire(client):
+def test_generate_reads_back_the_persisted_profile_not_a_client_supplied_one(
+    client, stub_provider
+):
+    """GenerateRequest is empty by design - nothing in the POST body can
+    change which profile the model reasons over."""
+    _, response = profile_and_generate(client, stub_provider)
+    assert response.status_code == 200
+    assert response.json()["result"]["target_column"] == "churn"
+
+
+def test_generate_before_profile_returns_dataset_expired(client, stub_provider):
+    """No profile on record for this id is folded into DATASET_EXPIRED - see
+    the comment on _load_stored_profile in app/api/datasets.py for why."""
+    dataset_id = upload(client)
+    response = client.post(f"/api/datasets/{dataset_id}/generate", json={})
+    assert response.status_code == 410
+    assert response.json()["error"]["code"] == "DATASET_EXPIRED"
+    assert stub_provider.calls == 0
+
+
+def test_generate_maps_a_provider_rate_limit_to_the_existing_code(client, stub_provider):
+    from app.errors import AppError
+
+    dataset_id = upload(client)
+    client.post(f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"})
+    stub_provider.error = AppError(ErrorCode.LLM_RATE_LIMITED, "slow down")
+
+    response = client.post(f"/api/datasets/{dataset_id}/generate", json={})
+
+    assert response.status_code == 429
+    body = response.json()
+    assert body["error"]["code"] == "LLM_RATE_LIMITED"
+    assert body["error"]["retryable"] is True
+
+
+def test_generate_result_field_order_is_preserved_over_the_wire(client, stub_provider):
     """The plan-then-code ordering has to survive serialisation, not just the class."""
-    response = client.post("/api/datasets/abc/generate", json={})
+    _, response = profile_and_generate(client, stub_provider)
     assert list(response.json()["result"].keys()) == list(GenResult.model_fields.keys())
 
 
@@ -185,8 +276,15 @@ def test_profile_reports_secondary_metrics(client):
     assert profile["primary_metric"] != "roc_auc"
 
 
-def test_validation_report_counts_match_its_checks(client):
-    report = client.post("/api/datasets/abc/generate", json={}).json()["validation"]
+def test_validation_report_counts_match_its_checks(client, stub_provider):
+    """The stub's code is trivial - no Pipeline, no target reference, no
+    split - so this report is expected to carry real findings, not a clean
+    pass. What is asserted is the counting invariant validation.validate
+    must keep regardless of content: error_count and warning_count always
+    reconcile against the checks list. See tests/test_validation.py for
+    checks asserted against their actual, intended failures."""
+    _, response = profile_and_generate(client, stub_provider)
+    report = response.json()["validation"]
     failed = [c for c in report["checks"] if not c["passed"]]
     assert report["error_count"] == sum(
         1 for c in failed if c["severity"] == ValidationSeverity.ERROR

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agentic AutoML - Generated Pipeline</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#832600",
+                        "outline": "#727687",
+                        "surface-container-high": "#e2e8f8",
+                        "primary": "#0050cb",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#424656",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#151c27",
+                        "on-surface": "#151c27",
+                        "data-mono": "#1D4ED8",
+                        "secondary-container": "#e0e2ef",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-tertiary-container": "#fff6f4",
+                        "tertiary-container": "#cc4204",
+                        "surface-tint": "#0054d6",
+                        "surface-container-lowest": "#ffffff",
+                        "status-warning": "#FACC15",
+                        "secondary": "#5b5e69",
+                        "on-primary-container": "#f8f7ff",
+                        "surface-container-low": "#f0f3ff",
+                        "on-secondary-fixed-variant": "#444651",
+                        "surface-background": "#F7F8FB",
+                        "inverse-on-surface": "#ebf1ff",
+                        "tertiary": "#a33200",
+                        "inverse-primary": "#b3c5ff",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "outline-variant": "#c2c6d8",
+                        "tertiary-fixed-dim": "#ffb59d",
+                        "inverse-surface": "#2a313d",
+                        "secondary-fixed-dim": "#c4c6d2",
+                        "surface-variant": "#dce2f3",
+                        "on-secondary-container": "#61646f",
+                        "secondary-fixed": "#e0e2ef",
+                        "primary-container": "#0066ff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#390c00",
+                        "surface-dim": "#d3daea",
+                        "surface-card": "#FFFFFF",
+                        "on-secondary-fixed": "#181b24",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#dce2f3",
+                        "tertiary-fixed": "#ffdbd0",
+                        "background": "#f9f9ff",
+                        "border-subtle": "#E5E7EB",
+                        "surface-bright": "#f9f9ff",
+                        "primary-fixed": "#dae1ff",
+                        "surface-container": "#e7eefe",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001849"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "container-max": "1440px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "base-unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "data-code": ["JetBrains Mono"],
+                        "data-display": ["JetBrains Mono"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "data-code": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "data-display": ["14px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .syntax-keyword { color: #cf8e6d; font-weight: 500; }
+        .syntax-string { color: #6aab73; }
+        .syntax-comment { color: #7a7e85; font-style: italic; }
+        .syntax-function { color: #56a8f5; }
+        .syntax-variable { color: #bcbec4; }
+        .syntax-number { color: #2aacb8; }
+        .syntax-operator { color: #bcbec4; }
+    </style>
+</head>
+<body class="bg-surface-background text-on-surface min-h-screen flex flex-col font-body-sm">
+<!-- TopNavBar (Shared Component) -->
+<nav class="flex justify-between items-center w-full px-gutter h-16 fixed top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-8">
+<div class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+                Agentic AutoML
+            </div>
+<!-- Hide search bar as per JSON -->
+<div class="hidden"></div>
+<div class="hidden md:flex gap-6 items-center h-full pt-[2px]">
+<!-- Assuming this falls under 'Workflows' given it's a step in a pipeline/workflow -->
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-1 hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200 opacity-80" href="#">Workflows</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Deployments</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Monitoring</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a software engineer, minimalist corporate style, well lit, neutral background. The lighting is soft and even, highlighting a calm, focused expression. High resolution, high contrast, modern corporate aesthetic. Professional business attire." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDacQkDysBMGNIcB1gPeNsGr7eB9FIQloE3CA5jPv-9kl3-uuy8PP5HY_zn3xT-Po2EKqafPiLg77y8hlb-JR0IpH488nMRSL76JrdOpy1EFT_UZmoTwCbzMPHt7uvjrW3rHpBKaUUY_tldgo5vQAoTCet8ajQClNbCCKWo_6PuaOUEnvHKxndUAe60WMCYCf74aVrkuhxwkyQ7_iDP7TNgPZGfgdsiVkAAZZnaocBrvob4HlpkK9Cgvg"/>
+</div>
+</nav>
+<div class="flex flex-1 pt-16 h-full">
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden md:flex flex-col w-64 h-[calc(100vh-64px)] fixed left-0 top-16 bg-surface-container-low dark:bg-surface-container-lowest border-r border-outline-variant py-4 px-2">
+<div class="px-4 mb-6">
+<div class="flex items-center gap-3 mb-4">
+<img alt="Agentic Auto-ML Logo" class="w-10 h-10 rounded-DEFAULT object-cover" data-alt="A sleek, minimalist logo for Agentic Auto-ML featuring interconnected geometric nodes in shades of primary blue against a bright white background. The design suggests artificial intelligence and automated data pipelines. Clean lines, vector-style flat art, professional tech aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAA8QpgNs2xynM0kxBn9SvxcqNY9LTqZST9bLSyRRESxK_2-IOOxRd7DgqiqmuvrLtiy79LzujplsGJJ_zoTUIOhb_q9kZOYzVqlJFE0G4ivKKyNeXfzz8rQ9hJh8vWAMpTRtNxTDG0Lf5YL3JlbuWYKm11Ys7t6UOoNTM7kwbMPb_wxB60gYLbLfE1S28NFN_1OQLeenpaODBLkq_aYiWAah5FkaQRhYOTEb-7coYZHw_scUZV0F5FuA"/>
+<div>
+<h2 class="text-body-lg font-headline-md font-semibold text-on-surface dark:text-on-surface-variant">Workflow Status</h2>
+<p class="text-data-code font-data-code text-secondary">Active Session: #ML-2904</p>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container py-2 px-4 rounded-DEFAULT text-body-sm font-headline-md font-semibold hover:bg-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    New Experiment
+                </button>
+</div>
+<nav class="flex-1 flex flex-col gap-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-2.5 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest hover:bg-surface-container dark:hover:bg-surface-container-high transition-all text-body-sm font-body-sm rounded-DEFAULT mx-2" href="#">
+<span class="material-symbols-outlined" data-icon="cloud_upload">cloud_upload</span>
+                    Upload
+                </a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest hover:bg-surface-container dark:hover:bg-surface-container-high transition-all text-body-sm font-body-sm rounded-DEFAULT mx-2" href="#">
+<span class="material-symbols-outlined" data-icon="track_changes">track_changes</span>
+                    Target Selection
+                </a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest hover:bg-surface-container dark:hover:bg-surface-container-high transition-all text-body-sm font-body-sm rounded-DEFAULT mx-2" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                    Data Profiling
+                </a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest hover:bg-surface-container dark:hover:bg-surface-container-high transition-all text-body-sm font-body-sm rounded-DEFAULT mx-2" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+                    ML Strategy
+                </a>
+<a class="flex items-center gap-3 px-4 py-2.5 bg-primary-container dark:bg-primary-fixed-variant text-on-primary-container dark:text-on-primary-fixed-variant border-r-4 border-primary rounded-r-lg scale-95 transition-transform duration-100 text-body-sm font-body-sm ml-2" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+                    Pipeline Generation
+                </a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-4">
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all text-body-sm font-body-sm rounded-DEFAULT mx-2" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                    Audit Trail
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all text-body-sm font-body-sm rounded-DEFAULT mx-2" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+                    API Logs
+                </a>
+</div>
+</aside>
+<!-- Main Content (Workbench) -->
+<main class="flex-1 md:ml-64 p-gutter md:p-margin-desktop overflow-y-auto max-w-container-max mx-auto w-full">
+<header class="mb-8">
+<div class="flex items-center gap-2 text-secondary mb-2">
+<span class="text-label-caps font-label-caps">WORKFLOW / STEP 5</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface">Generated Pipeline</h1>
+<p class="text-body-lg font-body-lg text-secondary mt-1">Review the auto-generated machine learning pipeline code before deployment.</p>
+</header>
+<!-- Warning Notice -->
+<div class="bg-status-warning/10 border border-status-warning/30 rounded-lg p-4 flex items-start gap-3 mb-8">
+<span class="material-symbols-outlined text-status-warning">warning</span>
+<div>
+<h3 class="font-headline-md font-semibold text-on-surface">Pipeline Not Executed</h3>
+<p class="text-body-sm text-on-surface-variant">This pipeline code has been synthesized but has not yet been run against the target data. Review the code and static checks below.</p>
+</div>
+<button class="ml-auto bg-primary-container text-on-primary-container px-4 py-2 rounded-DEFAULT text-body-sm font-headline-md hover:bg-primary transition-colors">
+                    Execute Pipeline
+                </button>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+<!-- Main Code Area -->
+<div class="xl:col-span-8 flex flex-col gap-6">
+<!-- Code Block Card -->
+<div class="bg-[#1e1f22] rounded-xl border border-outline-variant overflow-hidden shadow-sm flex flex-col">
+<!-- Code Header -->
+<div class="bg-[#2b2d30] px-4 py-3 border-b border-[#393b40] flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">code</span>
+<span class="text-data-display font-data-display text-surface-container-high">pipeline.py</span>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT bg-[#393b40] hover:bg-[#43454a] text-surface-container-high text-data-code font-data-code transition-colors">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+                                    Copy
+                                </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT bg-[#393b40] hover:bg-[#43454a] text-surface-container-high text-data-code font-data-code transition-colors">
+<span class="material-symbols-outlined text-[16px]">download</span>
+                                    Download
+                                </button>
+</div>
+</div>
+<!-- Code Content -->
+<div class="p-4 overflow-x-auto flex">
+<!-- Line Numbers -->
+<div class="text-secondary text-data-code font-data-code text-right select-none pr-4 border-r border-[#393b40] flex flex-col opacity-50">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span>
+</div>
+<!-- Syntax -->
+<pre class="pl-4 text-data-code font-data-code leading-relaxed"><code class="syntax-keyword">import</code> <span class="syntax-variable">pandas</span> <span class="syntax-keyword">as</span> <span class="syntax-variable">pd</span>
+<code class="syntax-keyword">from</code> <span class="syntax-variable">sklearn.pipeline</span> <span class="syntax-keyword">import</span> <span class="syntax-variable">Pipeline</span>
+<code class="syntax-keyword">from</code> <span class="syntax-variable">sklearn.impute</span> <span class="syntax-keyword">import</span> <span class="syntax-variable">SimpleImputer</span>
+<code class="syntax-keyword">from</code> <span class="syntax-variable">sklearn.preprocessing</span> <span class="syntax-keyword">import</span> <span class="syntax-variable">StandardScaler</span>
+<code class="syntax-keyword">from</code> <span class="syntax-variable">xgboost</span> <span class="syntax-keyword">import</span> <span class="syntax-variable">XGBClassifier</span>
+
+<code class="syntax-comment"># Auto-generated pipeline configuration: #ML-2904</code>
+<code class="syntax-keyword">def</code> <span class="syntax-function">build_pipeline</span><span class="syntax-operator">():</span>
+    <span class="syntax-variable">numeric_transformer</span> <span class="syntax-operator">=</span> <span class="syntax-variable">Pipeline</span><span class="syntax-operator">(</span><span class="syntax-variable">steps</span><span class="syntax-operator">=[</span>
+        <span class="syntax-operator">(</span><span class="syntax-string">'imputer'</span><span class="syntax-operator">,</span> <span class="syntax-variable">SimpleImputer</span><span class="syntax-operator">(</span><span class="syntax-variable">strategy</span><span class="syntax-operator">=</span><span class="syntax-string">'median'</span><span class="syntax-operator">)),</span>
+        <span class="syntax-operator">(</span><span class="syntax-string">'scaler'</span><span class="syntax-operator">,</span> <span class="syntax-variable">StandardScaler</span><span class="syntax-operator">())</span>
+    <span class="syntax-operator">])</span>
+
+    <span class="syntax-variable">model</span> <span class="syntax-operator">=</span> <span class="syntax-variable">XGBClassifier</span><span class="syntax-operator">(</span>
+        <span class="syntax-variable">n_estimators</span><span class="syntax-operator">=</span><span class="syntax-number">200</span><span class="syntax-operator">,</span>
+        <span class="syntax-variable">learning_rate</span><span class="syntax-operator">=</span><span class="syntax-number">0.05</span></pre>
+</div>
+</div>
+</div>
+<!-- Side Panel -->
+<div class="xl:col-span-4 flex flex-col gap-6">
+<!-- PR Checklist / Static Checks -->
+<div class="bg-surface-card rounded-xl border border-border-subtle p-6 shadow-[0px_4px_12px_rgba(0,0,0,0.05)]">
+<h3 class="text-body-lg font-headline-md font-semibold text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">fact_check</span>
+                            Static Checks
+                        </h3>
+<div class="flex flex-col gap-4">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-[#10B981] mt-0.5 text-[20px]">check_circle</span>
+<div>
+<div class="text-data-display font-data-display text-on-surface">Syntax Validation</div>
+<div class="text-body-sm text-secondary">Passed Python 3.10 ast parse</div>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-[#10B981] mt-0.5 text-[20px]">check_circle</span>
+<div>
+<div class="text-data-display font-data-display text-on-surface">Dependency Check</div>
+<div class="text-body-sm text-secondary">All packages available in env</div>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-status-warning mt-0.5 text-[20px]">warning</span>
+<div>
+<div class="text-data-display font-data-display text-on-surface">Security Scan (Bandit)</div>
+<div class="text-body-sm text-secondary">1 Low severity warning found</div>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-outline mt-0.5 text-[20px]">pending</span>
+<div>
+<div class="text-data-display font-data-display text-on-surface">Type Checking (MyPy)</div>
+<div class="text-body-sm text-secondary">Pending execution</div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant flex justify-between items-center">
+<span class="text-body-sm text-secondary font-data-display">2/4 Checks Passed</span>
+<a class="text-primary text-body-sm font-headline-md font-semibold hover:underline" href="#">View Details</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

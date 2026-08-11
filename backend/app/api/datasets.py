@@ -1,7 +1,6 @@
 """Dataset routes.
 
-Upload and profile are real as of stage 2. Generate still returns fixtures;
-stage 3 replaces it with the Gemini call.
+Upload, profile and generate are all real as of stage 3.
 """
 
 from __future__ import annotations
@@ -11,15 +10,17 @@ from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 
-from app import fixtures, ingest, profiler, storage
+from app import ingest, llm, profiler, storage, validation
 from app.errors import AppError, ErrorCode
+from app.llm import LLMProvider
 from app.models import (
     DatasetUploadResponse,
     GenerateRequest,
     GenerateResponse,
     JobState,
+    ProfileCard,
     ProfileRequest,
     ProfileResponse,
 )
@@ -75,24 +76,60 @@ async def profile_dataset(dataset_id: str, request: ProfileRequest) -> ProfileRe
     TARGET_NOT_FOUND, TARGET_ALL_NULL, TARGET_SINGLE_VALUE and
     TARGET_TYPE_UNSUPPORTED all originate inside profiler.profile and are
     rendered by the same AppError handler as every ingest rejection.
+
+    The card is persisted here, not just returned, because /generate has no
+    ProfileCard of its own to work from - GenerateRequest is deliberately
+    empty, see its docstring in models.py.
     """
     filename, frame = await asyncio.to_thread(_load_stored_frame, dataset_id)
     card = await asyncio.to_thread(
         profiler.profile, frame, dataset_id, filename, request.target_column
     )
+    await asyncio.to_thread(storage.save_profile, dataset_id, card.model_dump_json())
     return ProfileResponse(state=JobState.COMPLETE, profile=card)
 
 
-@router.post("/{dataset_id}/generate", response_model=GenerateResponse)
-async def generate_pipeline(dataset_id: str, request: GenerateRequest) -> GenerateResponse:
-    """Generate a strategy and pipeline code for a profiled dataset.
+def _load_stored_profile(dataset_id: str) -> ProfileCard:
+    """Look up the ProfileCard /profile left behind for this dataset.
 
-    The request body carries no profile on purpose. See GenerateRequest.
-    Stage 3 puts the Gemini call here and stage 4 the real validator.
+    Folded into DATASET_EXPIRED rather than a new code: errors.py is frozen
+    this session, and from the caller's perspective an id with no profile on
+    record is not in a state /generate can act on, same as an id that never
+    existed or has aged out. See the comment on DATASET_EXPIRED in errors.py
+    for the precedent - this is the same tradeoff, one more time.
     """
-    profile = fixtures.profile_card(fixtures.FIXTURE_TARGET)
-    return GenerateResponse(
-        state=JobState.COMPLETE,
-        result=fixtures.gen_result(profile.target_column),
-        validation=fixtures.validation_report(),
-    )
+    row = storage.get_dataset(dataset_id)
+    if row is None or row["profile_json"] is None:
+        raise AppError(
+            ErrorCode.DATASET_EXPIRED,
+            "This dataset has not been profiled yet, or is no longer available. "
+            "Profile it again before generating.",
+            {"dataset_id": dataset_id},
+        )
+    return ProfileCard.model_validate_json(row["profile_json"])
+
+
+@router.post("/{dataset_id}/generate", response_model=GenerateResponse)
+async def generate_pipeline(
+    dataset_id: str,
+    request: GenerateRequest,
+    provider: Annotated[LLMProvider, Depends(llm.default_provider)],
+) -> GenerateResponse:
+    """Generate a strategy and pipeline code for a profiled dataset, then
+    validate it statically.
+
+    The request body carries no profile on purpose. See GenerateRequest. The
+    profile read here is the one /profile persisted, never one the caller
+    could supply.
+
+    The report is returned alongside the result regardless of severity - a
+    FAIL does not suppress the code. The user is shown what was generated and
+    why it failed, not left to wonder what got hidden. VALIDATION_FAILED in
+    errors.py is not raised here: it is retryable=false, meant for phase 2's
+    repair loop, and a ValidationReport rendered as a checklist is the
+    correct response to output that parsed but did not pass, not an error.
+    """
+    profile = await asyncio.to_thread(_load_stored_profile, dataset_id)
+    result = await asyncio.to_thread(llm.generate, profile, dataset_id, provider)
+    report = await asyncio.to_thread(validation.validate, result, profile)
+    return GenerateResponse(state=JobState.COMPLETE, result=result, validation=report)

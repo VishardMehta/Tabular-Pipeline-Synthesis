@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
+from app.llm import StubProvider, default_provider
 from app.main import create_app
 
 
@@ -33,3 +34,17 @@ def client() -> Iterator[TestClient]:
     """
     with TestClient(create_app()) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def stub_provider(client: TestClient) -> Iterator[StubProvider]:
+    """Overrides the real GeminiProvider dependency for one test.
+
+    So test_api.py exercises /generate without a GOOGLE_API_KEY, a cassette,
+    or the network - the point of the whole route is unreachable to a test
+    otherwise, since GenerateRequest carries no way to inject a canned result.
+    """
+    provider = StubProvider()
+    client.app.dependency_overrides[default_provider] = lambda: provider
+    yield provider
+    client.app.dependency_overrides.pop(default_provider, None)

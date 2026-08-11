@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agentic AutoML - Pipeline Output</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#ffdbd0",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-container": "#fff6f4",
+                      "on-background": "#1b1c1c",
+                      "secondary-fixed-dim": "#b3c5ff",
+                      "error": "#ba1a1a",
+                      "inverse-surface": "#303031",
+                      "on-primary-fixed": "#001849",
+                      "surface-variant": "#e4e2e2",
+                      "tertiary-container": "#cc4204",
+                      "tertiary-fixed-dim": "#ffb59d",
+                      "secondary-fixed": "#dae1ff",
+                      "on-secondary-container": "#294487",
+                      "on-tertiary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#832600",
+                      "on-primary-fixed-variant": "#003fa4",
+                      "surface-tint": "#0054d6",
+                      "outline": "#727687",
+                      "surface-dim": "#dbdad9",
+                      "secondary-container": "#9bb4fe",
+                      "secondary": "#425ca0",
+                      "surface-container-high": "#e9e8e7",
+                      "surface-container-highest": "#e4e2e2",
+                      "on-error-container": "#93000a",
+                      "on-surface-variant": "#424656",
+                      "surface-bright": "#fbf9f8",
+                      "primary-fixed": "#dae1ff",
+                      "inverse-on-surface": "#f2f0f0",
+                      "inverse-primary": "#b3c5ff",
+                      "on-tertiary-fixed": "#390c00",
+                      "surface-container-low": "#f5f3f3",
+                      "on-primary": "#ffffff",
+                      "on-surface": "#1b1c1c",
+                      "on-secondary": "#ffffff",
+                      "tertiary": "#a33200",
+                      "surface": "#fbf9f8",
+                      "primary": "#0050cb",
+                      "primary-container": "#0066ff",
+                      "on-secondary-fixed-variant": "#284386",
+                      "outline-variant": "#c2c6d8",
+                      "surface-container": "#efeded",
+                      "on-error": "#ffffff",
+                      "primary-fixed-dim": "#b3c5ff",
+                      "on-secondary-fixed": "#001849",
+                      "on-primary-container": "#f8f7ff",
+                      "surface-container-lowest": "#ffffff",
+                      "background": "#fbf9f8"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-tight": "4px",
+                      "max-width": "900px",
+                      "stack-base": "8px",
+                      "gutter": "16px",
+                      "margin": "24px",
+                      "row-height-compact": "32px"
+              },
+              "fontFamily": {
+                      "body-sm": ["Hanken Grotesk"],
+                      "data-sm": ["JetBrains Mono"],
+                      "label-caps": ["Hanken Grotesk"],
+                      "data-md": ["JetBrains Mono"],
+                      "headline-sm": ["Hanken Grotesk"],
+                      "body-md": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                      "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "data-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+                      "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "data-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for code blocks */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Muted syntax highlighting simulation */
+        .syntax-keyword { color: #0050cb; font-weight: 600; }
+        .syntax-string { color: #a33200; }
+        .syntax-comment { color: #727687; font-style: italic; }
+        .syntax-function { color: #294487; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface fixed top-0 w-full h-[56px] border-b border-outline-variant z-50">
+<div class="flex justify-between items-center px-margin max-w-max-width mx-auto w-full h-full">
+<div class="font-headline-sm text-headline-sm font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="memory">memory</span>
+                Agentic AutoML
+            </div>
+<!-- Progress Indicator (Right Aligned) -->
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-on-background"></div>
+<div class="w-2 h-2 rounded-full bg-on-background"></div>
+<div class="w-2 h-2 rounded-full bg-on-background"></div>
+<div class="w-2 h-2 rounded-full bg-on-background"></div>
+<div class="w-2 h-2 rounded-full bg-primary-container ring-2 ring-primary-container ring-offset-1 ring-offset-surface"></div>
+</div>
+</div>
+</header>
+<div class="flex pt-[56px] h-screen overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden lg:flex flex-col fixed left-0 top-[56px] h-[calc(100vh-56px)] w-64 border-r border-outline-variant bg-surface-container-low z-40 shrink-0">
+<div class="p-4 border-b border-outline-variant">
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Workflow Status</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Automated Audit Trail</p>
+</div>
+<ul class="flex flex-col py-2 overflow-y-auto">
+<li class="px-3 py-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="upload_file">upload_file</span>
+<span class="font-body-sm text-body-sm">Upload</span>
+</a>
+</li>
+<li class="px-3 py-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="ads_click">ads_click</span>
+<span class="font-body-sm text-body-sm">Select</span>
+</a>
+</li>
+<li class="px-3 py-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="analytics">analytics</span>
+<span class="font-body-sm text-body-sm">Profile</span>
+</a>
+</li>
+<li class="px-3 py-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="psychology">psychology</span>
+<span class="font-body-sm text-body-sm">Strategy</span>
+</a>
+</li>
+<li class="px-3 py-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded bg-secondary-container text-on-secondary-container font-semibold transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="account_tree">account_tree</span>
+<span class="font-body-sm text-body-sm">Pipeline</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 overflow-y-auto w-full">
+<div class="max-w-max-width mx-auto px-margin py-margin pb-32 flex flex-col gap-margin">
+<!-- Notice Bar -->
+<div class="bg-surface-container-highest border border-outline-variant p-3 flex items-start gap-3 rounded-DEFAULT">
+<span class="material-symbols-outlined text-outline shrink-0" data-icon="info">info</span>
+<p class="font-body-sm text-body-sm text-on-surface">This pipeline has not been executed. Static checks only.</p>
+</div>
+<!-- Validation Checklist -->
+<section class="border border-outline-variant rounded-DEFAULT bg-surface flex flex-col">
+<header class="px-4 py-3 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
+<h3 class="font-headline-sm text-headline-sm text-on-background">Static checks</h3>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-container-low border border-outline-variant font-data-sm text-data-sm text-on-surface rounded-DEFAULT flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-primary" data-icon="check_circle">check_circle</span> 8 passed</span>
+<span class="px-2 py-1 bg-surface-container-low border border-outline-variant font-data-sm text-data-sm text-on-surface rounded-DEFAULT flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-tertiary" data-icon="warning">warning</span> 2 warnings</span>
+<span class="px-2 py-1 bg-surface-container-low border border-outline-variant font-data-sm text-data-sm text-outline rounded-DEFAULT flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="cancel">cancel</span> 0 failed</span>
+</div>
+</header>
+<div class="flex flex-col">
+<!-- Passed Rows -->
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">Syntax valid</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">AST parse successful, no syntax errors detected</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">Imports allowed</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">All standard library and sklearn modules verified</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">No dangerous calls</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">eval(), exec(), os.system() absent from generated code</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">Columns exist</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">Feature lists match provided dataset schema</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">Target referenced</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">Target variable 'y' explicitly separated before transformation</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">Uses Pipeline</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">sklearn.pipeline.Pipeline class instantiated correctly</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">Metric matches</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">Evaluation metric aligns with objective function (Classification)</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-primary mr-3" data-icon="check_circle">check_circle</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0">Consistent with profile</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">Imputation strategies align with EDA missing value analysis</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Warning Rows -->
+<div class="flex items-center px-4 h-row-height-compact border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group bg-tertiary-fixed/10">
+<span class="material-symbols-outlined text-[16px] text-tertiary mr-3" data-icon="warning">warning</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0 text-on-background">Random state</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">2 of 3 estimators set random_state=42. Ensure deterministic behavior.</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center px-4 h-row-height-compact hover:bg-surface-container-low transition-colors cursor-pointer group bg-tertiary-fixed/10">
+<span class="material-symbols-outlined text-[16px] text-tertiary mr-3" data-icon="warning">warning</span>
+<span class="font-body-sm text-body-sm font-medium w-48 shrink-0 text-on-background">Cross-validation</span>
+<span class="font-data-sm text-data-sm text-outline truncate flex-1">Single split detected, no cross_val_score implemented. Risk of overfitting.</span>
+<span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Code Block -->
+<section class="border border-outline-variant rounded-DEFAULT bg-surface-container-low flex flex-col overflow-hidden shadow-sm">
+<header class="px-4 py-2 border-b border-outline-variant flex justify-between items-center bg-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px]" data-icon="description">description</span>
+<span class="font-data-sm text-data-sm font-medium text-on-surface">pipeline.py</span>
+</div>
+<div class="flex gap-2">
+<button class="px-2 py-1 bg-surface border border-outline-variant hover:bg-surface-container-high transition-colors rounded-DEFAULT flex items-center gap-1 font-label-caps text-label-caps text-on-surface">
+<span class="material-symbols-outlined text-[14px]" data-icon="content_copy">content_copy</span> Copy
+                            </button>
+<button class="px-2 py-1 bg-surface border border-outline-variant hover:bg-surface-container-high transition-colors rounded-DEFAULT flex items-center gap-1 font-label-caps text-label-caps text-on-surface">
+<span class="material-symbols-outlined text-[14px]" data-icon="download">download</span> Download
+                            </button>
+</div>
+</header>
+<div class="flex text-data-md font-data-md bg-surface-bright overflow-x-auto scrollbar-hide">
+<!-- Line Numbers -->
+<div class="flex flex-col text-right px-3 py-4 bg-surface-container-lowest border-r border-outline-variant text-outline select-none shrink-0">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+<span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span>
+<span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span>
+</div>
+<!-- Code Content -->
+<div class="px-4 py-4 whitespace-pre text-on-surface overflow-x-auto min-w-max">
+<span class="syntax-keyword">import</span> pandas <span class="syntax-keyword">as</span> pd
+<span class="syntax-keyword">from</span> sklearn.compose <span class="syntax-keyword">import</span> ColumnTransformer
+<span class="syntax-keyword">from</span> sklearn.pipeline <span class="syntax-keyword">import</span> Pipeline
+<span class="syntax-keyword">from</span> sklearn.impute <span class="syntax-keyword">import</span> SimpleImputer
+<span class="syntax-keyword">from</span> sklearn.preprocessing <span class="syntax-keyword">import</span> StandardScaler, OneHotEncoder
+<span class="syntax-keyword">from</span> sklearn.ensemble <span class="syntax-keyword">import</span> RandomForestClassifier
+<span class="syntax-keyword">from</span> sklearn.model_selection <span class="syntax-keyword">import</span> train_test_split
+<span class="syntax-keyword">from</span> sklearn.metrics <span class="syntax-keyword">import</span> f1_score
+
+<span class="syntax-comment"># Load dataset generated by DataOps agent</span>
+df = pd.read_csv(<span class="syntax-string">'processed_data_v2.csv'</span>)
+X = df.drop(<span class="syntax-string">'target'</span>, axis=<span class="syntax-keyword">1</span>)
+y = df[<span class="syntax-string">'target'</span>]
+
+<span class="syntax-comment"># Numerical transformations</span>
+numeric_features = [<span class="syntax-string">'age'</span>, <span class="syntax-string">'tenure'</span>, <span class="syntax-string">'balance'</span>, <span class="syntax-string">'estimated_salary'</span>]
+numeric_transformer = Pipeline(steps=[
+    (<span class="syntax-string">'imputer'</span>, SimpleImputer(strategy=<span class="syntax-string">'median'</span>)),
+    (<span class="syntax-string">'scaler'</span>, StandardScaler())])
+
+<span class="syntax-comment"># Categorical transformations</span>
+categorical_features = [<span class="syntax-string">'geography'</span>, <span class="syntax-string">'gender'</span>, <span class="syntax-string">'card_type'</span>]
+categorical_transformer = Pipeline(steps=[
+    (<span class="syntax-string">'imputer'</span>, SimpleImputer(strategy=<span class="syntax-string">'constant'</span>, fill_value=<span class="syntax-string">'missing'</span>)),
+    (<span class="syntax-string">'onehot'</span>, OneHotEncoder(handle_unknown=<span class="syntax-string">'ignore'</span>))])
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        (<span class="syntax-string">'num'</span>, numeric_transformer, numeric_features),
+        (<span class="syntax-string">'cat'</span>, categorical_transformer, categorical_features)])
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

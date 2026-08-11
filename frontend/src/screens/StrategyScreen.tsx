@@ -1,7 +1,23 @@
 /** Screen 3: the plan the model committed to before it wrote any code. */
 
-import { Button, Card, NotExecutedNotice, SectionTitle } from "../components/ui";
+import { Button } from "../components/shared/Button";
+import { Card } from "../components/shared/Card";
+import { CandidateModelCard } from "../components/strategy/CandidateModelCard";
+import { DroppedColumnsTable } from "../components/strategy/DroppedColumnsTable";
+import { PreprocessingStep } from "../components/strategy/PreprocessingStep";
+import { Section } from "../components/strategy/Section";
 import type { GenResult } from "../types";
+
+const METRIC_LABEL: Record<string, string> = {
+  accuracy: "Accuracy",
+  f1: "F1 Score",
+  f1_macro: "F1 Score (macro)",
+  pr_auc: "PR-AUC",
+  roc_auc: "ROC-AUC",
+  rmse: "RMSE",
+  mae: "MAE",
+  r2: "R²",
+};
 
 export function StrategyScreen({
   result,
@@ -13,91 +29,85 @@ export function StrategyScreen({
   onBack: () => void;
 }) {
   return (
-    <div className="space-y-4">
-      <Card>
-        <SectionTitle>Analysis</SectionTitle>
-        <p className="text-sm leading-relaxed text-slate-700">{result.analysis_summary}</p>
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-8">
+        <h2 className="text-title font-title text-text-primary">Recommended strategy</h2>
+        <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-secondary-size text-text-secondary">
+          <span>{result.problem_type.replace(/_/g, " ")}</span>
+          <span aria-hidden>&middot;</span>
           <span>
-            Task <strong>{result.problem_type.replace(/_/g, " ")}</strong>
+            Target <span className="font-mono text-text-primary">{result.target_column}</span>
           </span>
+          <span aria-hidden>&middot;</span>
           <span>
-            Target <strong>{result.target_column}</strong>
+            Metric{" "}
+            <span className="font-medium text-text-primary">
+              {METRIC_LABEL[result.primary_metric] ?? result.primary_metric}
+            </span>
           </span>
-          <span>
-            Metric <strong>{result.primary_metric}</strong>
-          </span>
-        </div>
-      </Card>
+        </p>
+      </div>
 
       <Card>
-        <SectionTitle>Dropped columns ({result.dropped_columns.length})</SectionTitle>
-        <ul className="space-y-2">
-          {result.dropped_columns.map((dropped) => (
-            <li key={dropped.column} className="text-sm">
-              <span className="font-medium text-slate-900">{dropped.column}</span>
-              <span className="text-slate-600"> - {dropped.reason}</span>
-            </li>
-          ))}
-        </ul>
+        <Section title="Analysis">
+          <p className="max-w-[var(--prose-max-width)] text-secondary-size leading-relaxed text-text-secondary">
+            {result.analysis_summary}
+          </p>
+        </Section>
+
+        <Section title="Dropped columns" meta={<Count value={result.dropped_columns.length} />}>
+          <DroppedColumnsTable columns={result.dropped_columns} />
+        </Section>
+
+        <Section title="Preprocessing" meta={<Count value={result.preprocessing.length} />}>
+          <div className="space-y-4">
+            {result.preprocessing.map((step, index) => (
+              <PreprocessingStep key={step.step + index} step={step} index={index} />
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Candidate models" meta={<Count value={result.candidate_models.length} />}>
+          <div className="space-y-3">
+            {result.candidate_models.map((model, index) => (
+              <CandidateModelCard key={model.name} model={model} rank={index} />
+            ))}
+          </div>
+          <p className="mt-3 text-caption text-text-tertiary">
+            Not executed - no candidate model here has a measured score.
+          </p>
+        </Section>
+
+        <Section title="Validation">
+          <p className="max-w-[var(--prose-max-width)] text-secondary-size leading-relaxed text-text-secondary">
+            {result.validation_strategy}
+          </p>
+        </Section>
+
+        <Section title="Risks" meta={<Count value={result.risks.length} />}>
+          <ul className="space-y-2.5">
+            {result.risks.map((risk) => (
+              <li key={risk} className="flex gap-2.5 text-secondary-size leading-relaxed text-text-secondary">
+                <span className="mt-0.5 text-warning" aria-hidden>
+                  &#9650;
+                </span>
+                {risk}
+              </li>
+            ))}
+          </ul>
+        </Section>
       </Card>
 
-      <Card>
-        <SectionTitle>Preprocessing ({result.preprocessing.length} steps)</SectionTitle>
-        <ol className="space-y-3">
-          {result.preprocessing.map((step, index) => (
-            <li key={step.step} className="text-sm">
-              <p className="font-medium text-slate-900">
-                {index + 1}. {step.step}
-              </p>
-              <p className="mt-0.5 text-xs text-slate-500">{step.columns.join(", ")}</p>
-              <p className="mt-1 text-slate-600">{step.rationale}</p>
-            </li>
-          ))}
-        </ol>
-      </Card>
-
-      <Card>
-        <SectionTitle>Candidate models</SectionTitle>
-        <ul className="space-y-3">
-          {result.candidate_models.map((model) => (
-            <li key={model.name} className="text-sm">
-              <p className="font-medium text-slate-900">
-                {model.name}
-                <span className="ml-2 text-xs font-normal text-slate-500">{model.library}</span>
-              </p>
-              <p className="mt-1 text-slate-600">{model.rationale}</p>
-            </li>
-          ))}
-        </ul>
-        {/* No scores here, and there is no field that could carry one. */}
-        <div className="mt-4">
-          <NotExecutedNotice />
-        </div>
-      </Card>
-
-      <Card>
-        <SectionTitle>Validation strategy</SectionTitle>
-        <p className="text-sm leading-relaxed text-slate-700">{result.validation_strategy}</p>
-      </Card>
-
-      <Card>
-        <SectionTitle>Risks ({result.risks.length})</SectionTitle>
-        <ul className="list-disc space-y-2 pl-5">
-          {result.risks.map((risk) => (
-            <li key={risk} className="text-sm text-slate-700">
-              {risk}
-            </li>
-          ))}
-        </ul>
-      </Card>
-
-      <div className="flex justify-between">
+      <div className="mt-6 flex justify-between">
         <Button variant="secondary" onClick={onBack}>
           Back to profile
         </Button>
-        <Button onClick={onViewCode}>View code</Button>
+        <Button onClick={onViewCode}>View pipeline</Button>
       </div>
     </div>
   );
+}
+
+function Count({ value }: { value: number }) {
+  return <span className="text-caption text-text-tertiary">{value}</span>;
 }

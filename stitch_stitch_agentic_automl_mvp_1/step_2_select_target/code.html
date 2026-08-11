@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Select Target Column - Agentic AutoML</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbd0",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#fff6f4",
+                        "on-background": "#1b1c1c",
+                        "secondary-fixed-dim": "#b3c5ff",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#303031",
+                        "on-primary-fixed": "#001849",
+                        "surface-variant": "#e4e2e2",
+                        "tertiary-container": "#cc4204",
+                        "tertiary-fixed-dim": "#ffb59d",
+                        "secondary-fixed": "#dae1ff",
+                        "on-secondary-container": "#294487",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#832600",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "surface-tint": "#0054d6",
+                        "outline": "#727687",
+                        "surface-dim": "#dbdad9",
+                        "secondary-container": "#9bb4fe",
+                        "secondary": "#425ca0",
+                        "surface-container-high": "#e9e8e7",
+                        "surface-container-highest": "#e4e2e2",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#424656",
+                        "surface-bright": "#fbf9f8",
+                        "primary-fixed": "#dae1ff",
+                        "inverse-on-surface": "#f2f0f0",
+                        "inverse-primary": "#b3c5ff",
+                        "on-tertiary-fixed": "#390c00",
+                        "surface-container-low": "#f5f3f3",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1b1c1c",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#a33200",
+                        "surface": "#fbf9f8",
+                        "primary": "#0050cb",
+                        "primary-container": "#0066ff",
+                        "on-secondary-fixed-variant": "#284386",
+                        "outline-variant": "#c2c6d8",
+                        "surface-container": "#efeded",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-secondary-fixed": "#001849",
+                        "on-primary-container": "#f8f7ff",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#fbf9f8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-tight": "4px",
+                        "max-width": "900px",
+                        "stack-base": "8px",
+                        "gutter": "16px",
+                        "margin": "24px",
+                        "row-height-compact": "32px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Hanken Grotesk"],
+                        "data-sm": ["JetBrains Mono"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "data-md": ["JetBrains Mono"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "data-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "data-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .font-mono-data { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-background text-on-background m-0 p-0 antialiased h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden lg:flex flex-col fixed left-0 top-[56px] h-[calc(100vh-56px)] h-full w-64 border-r border-outline-variant border-r border-outline-variant flat no shadows bg-surface-container-low dark:bg-surface-container z-10">
+<div class="px-margin py-gutter border-b border-outline-variant">
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Workflow Status</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-stack-tight">Automated Audit Trail</p>
+</div>
+<div class="flex flex-col py-stack-base">
+<a class="flex items-center px-margin py-stack-base mx-stack-base rounded text-on-surface-variant hover:bg-surface-container-high hover:bg-surface-container-highest transition-all scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined mr-stack-base text-lg">upload_file</span>
+<span>Upload</span>
+</a>
+<a class="flex items-center px-margin py-stack-base mx-stack-base rounded bg-secondary-container text-on-secondary-container font-semibold hover:bg-surface-container-highest transition-all scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined mr-stack-base text-lg font-variation-settings:'FILL' 1;">ads_click</span>
+<span>Select</span>
+</a>
+<a class="flex items-center px-margin py-stack-base mx-stack-base rounded text-on-surface-variant hover:bg-surface-container-high hover:bg-surface-container-highest transition-all scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined mr-stack-base text-lg">analytics</span>
+<span>Profile</span>
+</a>
+<a class="flex items-center px-margin py-stack-base mx-stack-base rounded text-on-surface-variant hover:bg-surface-container-high hover:bg-surface-container-highest transition-all scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined mr-stack-base text-lg">psychology</span>
+<span>Strategy</span>
+</a>
+<a class="flex items-center px-margin py-stack-base mx-stack-base rounded text-on-surface-variant hover:bg-surface-container-high hover:bg-surface-container-highest transition-all scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined mr-stack-base text-lg">account_tree</span>
+<span>Pipeline</span>
+</a>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full h-[56px] flex justify-between items-center px-margin mx-auto w-full border-b border-outline-variant dark:border-outline flat no shadows bg-surface dark:bg-background z-20">
+<div class="font-headline-sm text-headline-sm font-semibold text-on-surface dark:text-on-background">
+            Agentic AutoML
+        </div>
+<div class="hidden search_bar"></div>
+<div class="flex items-center space-x-stack-tight">
+<span class="material-symbols-outlined text-outline dark:text-outline-variant text-lg">check_circle</span>
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed text-lg font-variation-settings:'FILL' 1;">radio_button_checked</span>
+<span class="material-symbols-outlined text-outline dark:text-outline-variant text-lg">radio_button_unchecked</span>
+<span class="material-symbols-outlined text-outline dark:text-outline-variant text-lg">radio_button_unchecked</span>
+<span class="material-symbols-outlined text-outline dark:text-outline-variant text-lg">radio_button_unchecked</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="lg:ml-64 mt-[56px] flex-1 overflow-y-auto w-full flex justify-center">
+<div class="w-full max-w-max-width px-gutter lg:px-margin py-margin">
+<!-- Context Header -->
+<div class="flex justify-between items-baseline mb-gutter pb-gutter border-b border-outline-variant">
+<div>
+<h1 class="font-data-md text-data-md text-on-background font-mono-data">telco_churn.csv</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-stack-tight">7,043 rows, 21 columns</p>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-background font-semibold">Select the column you want to predict.</p>
+</div>
+</div>
+<!-- Warning Panel (Contextual) -->
+<div class="bg-surface-container-low border border-tertiary-container p-gutter mb-margin rounded flex flex-col md:flex-row md:items-center justify-between shadow-sm">
+<div class="flex items-start">
+<span class="material-symbols-outlined text-tertiary-container mr-stack-base text-lg">warning</span>
+<div>
+<p class="font-body-sm text-body-sm text-on-background">This target has 12 distinct integer values. It could be a multiclass classification target or a regression target.</p>
+</div>
+</div>
+<div class="flex space-x-gutter mt-gutter md:mt-0 ml-0 md:ml-margin">
+<label class="flex items-center space-x-stack-tight cursor-pointer">
+<input checked="" class="text-primary focus:ring-primary h-4 w-4 border-outline" name="target_type" type="radio"/>
+<span class="font-body-sm text-body-sm text-on-background">Classification</span>
+</label>
+<label class="flex items-center space-x-stack-tight cursor-pointer">
+<input class="text-primary focus:ring-primary h-4 w-4 border-outline" name="target_type" type="radio"/>
+<span class="font-body-sm text-body-sm text-on-background">Regression</span>
+</label>
+</div>
+</div>
+<!-- Data Table -->
+<div class="border border-outline-variant rounded bg-surface overflow-hidden shadow-sm">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="py-stack-base px-gutter font-label-caps text-label-caps text-outline uppercase tracking-wider font-semibold w-1/3">Column Name</th>
+<th class="py-stack-base px-gutter font-label-caps text-label-caps text-outline uppercase tracking-wider font-semibold w-1/4">Inferred Type</th>
+<th class="py-stack-base px-gutter font-label-caps text-label-caps text-outline uppercase tracking-wider font-semibold text-right w-1/6">Unique Values</th>
+<th class="py-stack-base px-gutter font-label-caps text-label-caps text-outline uppercase tracking-wider font-semibold w-1/4">Missing</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">customer_id</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">TEXT</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">7043</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-outline h-full" style="width: 0%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">0.0%</span>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">gender</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">CATEGORICAL</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">2</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-outline h-full" style="width: 0%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">0.0%</span>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">senior_citizen</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">BOOLEAN</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">2</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-outline h-full" style="width: 0%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">0.0%</span>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">tenure</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">NUMERIC_CONTINUOUS</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">73</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-outline h-full" style="width: 0%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">0.0%</span>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">monthly_charges</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">NUMERIC_CONTINUOUS</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">1585</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-outline h-full" style="width: 0%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">0.0%</span>
+</div>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">total_charges</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">CATEGORICAL</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">6531</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-outline h-full" style="width: 0%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">0.0%</span>
+</div>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">notes</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">TEXT</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">340</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-error h-full" style="width: 95.2%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">95.2%</span>
+</div>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="h-row-height-compact hover:bg-surface-container-lowest cursor-pointer transition-colors">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background">churn_reason</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">CATEGORICAL</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">4</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-error h-full" style="width: 73.4%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">73.4%</span>
+</div>
+</td>
+</tr>
+<!-- Selected Row -->
+<tr class="h-row-height-compact bg-primary-fixed border-l-2 border-primary cursor-pointer">
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-on-background font-bold">churn</td>
+<td class="py-stack-tight px-gutter"><span class="inline-block bg-surface-variant text-on-surface-variant font-data-sm text-data-sm px-[6px] py-[2px] rounded-sm font-mono-data">CATEGORICAL</span></td>
+<td class="py-stack-tight px-gutter font-data-md text-data-md font-mono-data text-right text-on-background">2</td>
+<td class="py-stack-tight px-gutter">
+<div class="flex items-center space-x-stack-tight">
+<div class="w-16 h-1 bg-surface-variant rounded-full overflow-hidden flex"><div class="bg-outline h-full" style="width: 0%"></div></div>
+<span class="font-data-sm text-data-sm font-mono-data text-on-surface-variant">0.0%</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Action Area -->
+<div class="mt-margin flex justify-end">
+<button class="bg-primary-container text-on-primary font-body-md text-body-md px-gutter py-[6px] rounded hover:opacity-90 transition-opacity flex items-center shadow-sm">
+<span>Profile dataset</span>
+<span class="material-symbols-outlined ml-stack-tight text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>

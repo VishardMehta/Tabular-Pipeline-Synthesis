@@ -1,6 +1,8 @@
 /** Screen 1.5: pick the column to predict. */
 
-import { Button, Card, SectionTitle } from "../components/ui";
+import { Button } from "../components/shared/Button";
+import { Card, SectionHeading } from "../components/shared/Card";
+import { ColumnTable } from "../components/target/ColumnTable";
 import type { DatasetUploadResponse } from "../types";
 
 export function TargetScreen({
@@ -17,33 +19,28 @@ export function TargetScreen({
   busy: boolean;
 }) {
   return (
-    <Card>
-      <SectionTitle>
-        {dataset.filename} - {dataset.n_rows.toLocaleString()} rows, {dataset.n_columns} columns
-      </SectionTitle>
-      <p className="mb-4 text-sm text-slate-600">
-        Which column should the model predict?
-      </p>
-      <div className="grid max-h-96 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
-        {dataset.columns.map((column) => (
-          <button
-            key={column}
-            onClick={() => onSelect(column)}
-            className={`truncate rounded-md border px-3 py-2 text-left text-sm transition ${
-              selected === column
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
-            }`}
-          >
-            {column}
-          </button>
-        ))}
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-8">
+        <h2 className="text-title font-title text-text-primary">Choose what to predict</h2>
+        <p className="mt-2 text-secondary-size text-text-secondary">
+          <span className="font-mono">{dataset.filename}</span> &middot;{" "}
+          {dataset.n_rows.toLocaleString()} rows &middot; {dataset.n_columns} columns
+        </p>
       </div>
-      <div className="mt-5 flex justify-end">
-        <Button onClick={onConfirm} disabled={!selected || busy}>
-          {busy ? "Profiling..." : "Profile dataset"}
-        </Button>
-      </div>
-    </Card>
+
+      <Card>
+        <SectionHeading>Target column</SectionHeading>
+        <ColumnTable columns={dataset.columns} selected={selected} onSelect={onSelect} />
+
+        <div className="mt-5 flex items-center justify-between">
+          <p className="text-caption text-text-tertiary" aria-live="polite">
+            {selected ? null : "Select a column to continue."}
+          </p>
+          <Button onClick={onConfirm} disabled={!selected || busy} loading={busy}>
+            {busy ? "Profiling dataset" : "Profile dataset"}
+          </Button>
+        </div>
+      </Card>
+    </div>
   );
 }

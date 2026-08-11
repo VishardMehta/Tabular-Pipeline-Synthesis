@@ -8,22 +8,15 @@
 
 import { useReducer } from "react";
 import { ApiError, generatePipeline, profileDataset, uploadDataset } from "./api";
-import { ErrorBanner } from "./components/ui";
+import { ErrorPanel } from "./components/shared/ErrorPanel";
+import { ProgressHeader } from "./components/layout/ProgressHeader";
 import { CodeScreen } from "./screens/CodeScreen";
 import { ProfileScreen } from "./screens/ProfileScreen";
 import { StrategyScreen } from "./screens/StrategyScreen";
 import { TargetScreen } from "./screens/TargetScreen";
 import { UploadScreen } from "./screens/UploadScreen";
-import { initialState, reducer, type Screen } from "./state";
+import { initialState, reducer } from "./state";
 import type { ErrorDetail } from "./types";
-
-const STEPS: { screen: Screen; label: string }[] = [
-  { screen: "upload", label: "Upload" },
-  { screen: "target", label: "Target" },
-  { screen: "profile", label: "Profile" },
-  { screen: "strategy", label: "Strategy" },
-  { screen: "code", label: "Code" },
-];
 
 function toDetail(error: unknown): ErrorDetail {
   if (error instanceof ApiError) return error.detail;
@@ -81,81 +74,63 @@ export default function App() {
         ? handleProfile
         : undefined;
 
-  const activeStep = STEPS.findIndex((step) => step.screen === state.screen);
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <h1 className="text-lg font-semibold text-slate-900">Agentic AutoML</h1>
-          <nav className="flex items-center gap-2 text-sm">
-            {STEPS.map((step, index) => (
-              <span
-                key={step.screen}
-                className={
-                  index === activeStep
-                    ? "font-medium text-slate-900"
-                    : index < activeStep
-                      ? "text-slate-500"
-                      : "text-slate-300"
-                }
-              >
-                {step.label}
-                {index < STEPS.length - 1 ? <span className="ml-2 text-slate-300">/</span> : null}
-              </span>
-            ))}
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-bg">
+      <ProgressHeader activeScreen={state.screen} datasetFilename={state.dataset?.filename} />
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-[var(--content-max-width)] px-6 py-10 sm:px-10 sm:py-14">
         {state.error ? (
-          <ErrorBanner
+          <ErrorPanel
             detail={state.error}
             onRetry={state.error.retryable ? retryHandler : undefined}
             onDismiss={() => dispatch({ type: "DISMISSED_ERROR" })}
           />
         ) : null}
 
-        {state.screen === "upload" ? (
-          <UploadScreen onFile={handleUpload} busy={state.busy} />
-        ) : null}
+        {/* Keying on screen forces a remount, which is what drives the
+            screen-enter fade+translate on every navigation - section 32:
+            a fade plus a small translate, never a side-slide. */}
+        <div key={state.screen} className="screen-enter">
+          {state.screen === "upload" ? (
+            <UploadScreen onFile={handleUpload} busy={state.busy} hasError={Boolean(state.error)} />
+          ) : null}
 
-        {state.screen === "target" && state.dataset ? (
-          <TargetScreen
-            dataset={state.dataset}
-            selected={state.targetColumn}
-            onSelect={(column) => dispatch({ type: "TARGET_SELECTED", targetColumn: column })}
-            onConfirm={handleProfile}
-            busy={state.busy}
-          />
-        ) : null}
+          {state.screen === "target" && state.dataset ? (
+            <TargetScreen
+              dataset={state.dataset}
+              selected={state.targetColumn}
+              onSelect={(column) => dispatch({ type: "TARGET_SELECTED", targetColumn: column })}
+              onConfirm={handleProfile}
+              busy={state.busy}
+            />
+          ) : null}
 
-        {state.screen === "profile" && state.profile ? (
-          <ProfileScreen
-            profile={state.profile}
-            onGenerate={handleGenerate}
-            onBack={() => dispatch({ type: "NAVIGATED", screen: "target" })}
-            busy={state.busy}
-          />
-        ) : null}
+          {state.screen === "profile" && state.profile ? (
+            <ProfileScreen
+              profile={state.profile}
+              onGenerate={handleGenerate}
+              onBack={() => dispatch({ type: "NAVIGATED", screen: "target" })}
+              busy={state.busy}
+            />
+          ) : null}
 
-        {state.screen === "strategy" && state.result ? (
-          <StrategyScreen
-            result={state.result}
-            onViewCode={() => dispatch({ type: "NAVIGATED", screen: "code" })}
-            onBack={() => dispatch({ type: "NAVIGATED", screen: "profile" })}
-          />
-        ) : null}
+          {state.screen === "strategy" && state.result ? (
+            <StrategyScreen
+              result={state.result}
+              onViewCode={() => dispatch({ type: "NAVIGATED", screen: "code" })}
+              onBack={() => dispatch({ type: "NAVIGATED", screen: "profile" })}
+            />
+          ) : null}
 
-        {state.screen === "code" && state.result && state.validation ? (
-          <CodeScreen
-            result={state.result}
-            validation={state.validation}
-            onBack={() => dispatch({ type: "NAVIGATED", screen: "strategy" })}
-            onRestart={() => dispatch({ type: "RESET" })}
-          />
-        ) : null}
+          {state.screen === "code" && state.result && state.validation ? (
+            <CodeScreen
+              result={state.result}
+              validation={state.validation}
+              onBack={() => dispatch({ type: "NAVIGATED", screen: "strategy" })}
+              onRestart={() => dispatch({ type: "RESET" })}
+            />
+          ) : null}
+        </div>
       </main>
     </div>
   );
