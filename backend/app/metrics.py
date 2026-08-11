@@ -25,6 +25,16 @@ def class_balance_ratio(y: pd.Series, problem_type: ProblemType) -> float | None
     of ratio), so the generalization changes no metric decision. It exists so
     ProfileCard.class_balance_ratio reports a consistent number across problem
     types rather than being None for multiclass for no principled reason.
+
+    An alternative, (1 / n_classes) / min_class_proportion, was proposed and
+    rejected. It was meant to generalize past binary without leaning on
+    "majority" and "minority", but that problem does not need solving here:
+    multiclass never reads this value against the bands at all, so there was
+    nothing to generalize for. The two formulas also disagree numerically at
+    every imbalance away from an even split - 9.0 versus 5.0 at a 90/10
+    split - and n_majority / n_minority is what BALANCE_ACCURACY_MAX and
+    BALANCE_F1_MAX were calibrated against, so it is the one that keeps the
+    bands meaning what their comments say they mean.
     """
     if problem_type is ProblemType.REGRESSION:
         return None
