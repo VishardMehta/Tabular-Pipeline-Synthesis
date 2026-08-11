@@ -52,7 +52,9 @@ from app.heuristics import ANALYSIS_SUMMARY_MAX_CHARS, RISKS_MAX_ITEMS
 # available on GenResult.problem_type. Stage 3 authors it properly alongside the
 # system prompt. Until then it stays factual and short.
 class ProblemType(StrEnum):
-    """The supervised learning task implied by the target column."""
+    """The supervised learning task for this dataset. Copy the problem_type
+    given in the profile. It was derived from the target column by rule. If you
+    think it is wrong, say so in `risks` rather than changing it here."""
 
     BINARY_CLASSIFICATION = "binary_classification"
     MULTICLASS_CLASSIFICATION = "multiclass_classification"
@@ -68,7 +70,10 @@ class ProblemType(StrEnum):
 # heuristics.py, never by the model. See heuristics.md for the selection tables
 # and for why roc_auc is reachable only as a secondary.
 class Metric(StrEnum):
-    """An evaluation metric. Use the metric supplied in the profile."""
+    """An evaluation metric. Copy the primary_metric given in the profile. It
+    follows from the target's class balance by rule. If you think a different
+    metric suits this dataset better, say so in `risks` rather than changing it
+    here."""
 
     ACCURACY = "accuracy"
     F1 = "f1"
@@ -273,25 +278,41 @@ class ProfileCard(BaseModel):
 class DroppedColumn(BaseModel):
     """A column excluded from the feature set, with the reason for excluding it."""
 
-    column: str
-    reason: str
+    column: str = Field(description="The column name, exactly as the profile spells it.")
+    reason: str = Field(
+        description="Why this column is excluded, citing the profile fact that "
+        "justifies it rather than a general principle about columns of its kind."
+    )
 
 
 class PreprocessingStep(BaseModel):
     """One transformation applied to named columns before training."""
 
-    step: str = Field(description="Short name of the transformation.")
-    columns: list[str]
-    rationale: str
+    step: str = Field(
+        description="Short name of the transformation, for example 'median imputation'."
+    )
+    columns: list[str] = Field(
+        description="The columns this step applies to, named exactly as the profile "
+        "spells them."
+    )
+    rationale: str = Field(
+        description="Why these columns need this transformation, grounded in their "
+        "profile statistics."
+    )
 
 
 # Carries no score field of any kind, for the reason given above GenResult.
 class CandidateModel(BaseModel):
     """A model worth trying for this dataset."""
 
-    name: str
-    library: str
-    rationale: str
+    name: str = Field(
+        description="The estimator class name, for example HistGradientBoostingClassifier."
+    )
+    library: str = Field(description="The library it comes from, for example scikit-learn.")
+    rationale: str = Field(
+        description="Why this model suits this dataset's size, shape and task. Do not "
+        "state or estimate how well it would score."
+    )
 
 
 # GenResult field order is load-bearing and must not be reordered.
@@ -321,17 +342,51 @@ class GenResult(BaseModel):
     """A modelling strategy for one tabular dataset, followed by the code that
     implements exactly that strategy."""
 
+    # problem_type and primary_metric carry no description on purpose. The SDK
+    # discards a Field description on an enum-typed field when it inlines the
+    # $ref, so anything written here would be silently dropped. Their steering
+    # lives in the ProblemType and Metric docstrings instead.
     problem_type: ProblemType
-    target_column: str
+    target_column: str = Field(
+        description="The column being predicted. Copy target_column from the profile "
+        "exactly, preserving its original spelling, spacing and capitalisation."
+    )
     primary_metric: Metric
-    dropped_columns: list[DroppedColumn]
-    preprocessing: list[PreprocessingStep]
-    candidate_models: list[CandidateModel]
-    validation_strategy: str
-    analysis_summary: str = Field(max_length=ANALYSIS_SUMMARY_MAX_CHARS)
+    dropped_columns: list[DroppedColumn] = Field(
+        description="Every column excluded from the feature set. This must match the "
+        "columns the code actually drops, with nothing listed that the code keeps."
+    )
+    preprocessing: list[PreprocessingStep] = Field(
+        description="The transformations applied before training, in the order the code "
+        "applies them. Every retained column needing treatment should appear in a step."
+    )
+    candidate_models: list[CandidateModel] = Field(
+        description="Two to four models worth trying on this dataset, strongest first. "
+        "The first one is what the code implements."
+    )
+    validation_strategy: str = Field(
+        description="How the pipeline is evaluated and why that scheme suits this "
+        "dataset. Name the split, the number of folds, and whether it is stratified."
+    )
+    analysis_summary: str = Field(
+        max_length=ANALYSIS_SUMMARY_MAX_CHARS,
+        description="A short plain-language account of the dataset and the strategy, for "
+        "someone deciding whether to trust it. State no performance figures of any kind: "
+        "this code has not been run and you have not measured anything.",
+    )
     # max_length on a list bounds the number of items, not their length.
-    risks: list[str] = Field(max_length=RISKS_MAX_ITEMS)
-    code: str
+    risks: list[str] = Field(
+        max_length=RISKS_MAX_ITEMS,
+        description="Specific ways this pipeline could mislead or fail on this dataset, "
+        "each grounded in a profile fact. General caveats true of any dataset are not "
+        "risks. Include no performance figures here either.",
+    )
+    code: str = Field(
+        description="A complete, runnable Python script implementing exactly the strategy "
+        "above. Read data.csv with the pandas C engine, define every column it references, "
+        "import only pandas, numpy and scikit-learn, set every random_state, and print the "
+        "primary metric by name."
+    )
 
 
 # ---------------------------------------------------------------------------

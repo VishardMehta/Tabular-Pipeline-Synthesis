@@ -389,6 +389,32 @@ TARGET_SKEW_THRESHOLD = 2.0
 # eventually exceed it.
 ANALYSIS_SUMMARY_MAX_CHARS = 2000
 
+# Maximum number of ColumnProfile entries serialised into a prompt.
+#
+# Added in stage 3. MAX_COLS is a structural bound on what the tool will accept
+# at all, and its own comment says plainly that it does not protect the prompt:
+# a 1,000-column ProfileCard is on the order of 50,000 tokens, which fits in the
+# model's window and degrades its reasoning long before it overflows. This is
+# the budget MAX_COLS is not.
+#
+# 200 columns is roughly 12,000 tokens of profile at the compact serialisation
+# in prompts.py, which leaves the model's attention on the modelling problem
+# rather than on a wall of facts. It is also past the point where per-column
+# reasoning is the right approach at all: a dataset wider than this needs
+# dimensionality reduction as its strategy, which is a different task from the
+# one this tool performs.
+#
+# Lower (50): starts truncating ordinary wide datasets, and the model then
+# plans around columns it cannot see. Higher (500): 30,000 tokens of profile,
+# where the reasoning degradation the number exists to prevent has already set
+# in.
+#
+# Truncation is never silent. When it applies, the target and every flagged
+# column are kept first, the remainder fills by descending target association,
+# and the prompt states how many columns were omitted so the model knows its
+# view is partial. See prompts.py.
+PROMPT_MAX_COLUMNS = 200
+
 # Cap on the number of entries in GenResult.risks.
 #
 # 8 is past the point of diminishing returns. A risk list long enough to need

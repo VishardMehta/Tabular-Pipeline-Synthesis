@@ -136,17 +136,14 @@ def test_generate_result_field_order_is_preserved_over_the_wire(client):
     assert list(response.json()["result"].keys()) == list(GenResult.model_fields.keys())
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Stage 3: author model-facing Field(description=...) on every GenResult "
-    "field alongside the system prompt. Descriptions are prompt surface and are "
-    "currently empty, so the schema steers generation not at all. Note that "
-    "problem_type and primary_metric cannot take a field description - the SDK "
-    "discards it when inlining the enum $ref - so those two are steered by the "
-    "ProblemType and Metric docstrings instead.",
-)
 def test_gen_result_fields_carry_model_facing_descriptions():
-    """Descriptions reach the model. Empty ones waste the main steering lever."""
+    """Descriptions reach the model. Empty ones waste the main steering lever.
+
+    problem_type and primary_metric are excluded because the SDK discards a
+    field description on an enum-typed field when it inlines the $ref. Those
+    two are steered by the ProblemType and Metric docstrings instead, which is
+    asserted separately below.
+    """
     undescribed = [
         name
         for name, field in GenResult.model_fields.items()
