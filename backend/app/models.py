@@ -1,15 +1,38 @@
-"""Pydantic v2 schemas. This module is the contract between every layer.
+"""Pydantic v2 schemas. The contract between every layer."""
 
-Everything else in the system derives from this file: the API responses, the
-TypeScript mirrors in the frontend, the Gemini `response_schema`, and the
-validator's self-consistency checks. Changing a field here is a breaking change
-in four places at once.
-
-Design rule inherited from the architecture: Python computes facts, the LLM
-reasons over facts, the LLM never sees raw data. That is why no model in this
-file carries cell values, category labels, or sample rows. Only derived
-statistics cross the boundary into a prompt.
-"""
+# THIS FILE HAS TWO AUDIENCES. KEEP THEM SEPARATE.
+#
+#   `#` comments are for humans. Engineering rationale, tradeoffs, why a field
+#   exists, what breaks if it changes. These never leave the repository.
+#
+#   Docstrings and Field(description=...) are prompt surface. They are sent to
+#   the model as instruction text whenever a class here is used as a Gemini
+#   `response_schema`. Model-facing wording only, no internal reasoning.
+#
+# This is not a style preference, it is observable. google-genai serialises the
+# docstring of any class reachable from the response schema into the request as
+# a `description`, so a docstring explaining a decision to a colleague becomes
+# an instruction to the model.
+#
+# The leak has a sharp edge worth knowing before writing any description text.
+# Pydantic emits a `$ref` plus a sibling `description` for enum-typed and
+# single-nested-model fields. The SDK inlines the `$ref` by replacing the whole
+# node, which discards the sibling. Concretely, on GenResult:
+#
+#   problem_type, primary_metric   Field(description=...) is SILENTLY DROPPED.
+#                                  The enum's own docstring is what gets sent,
+#                                  so ProblemType and Metric docstrings are the
+#                                  only lever available on those two fields.
+#   dropped_columns, preprocessing,
+#   candidate_models               list[Model], so the field description
+#                                  survives, and the nested class docstring is
+#                                  sent separately as the items description.
+#   everything else                plain fields, description survives normally.
+#
+# Everything else in this file follows from the architecture: Python computes
+# facts, the LLM reasons over facts, the LLM never sees raw data. No model here
+# carries cell values or sample rows. The single exception is
+# ColumnProfile.sample_values, argued at its definition.
 
 from __future__ import annotations
 
@@ -24,21 +47,28 @@ from app.heuristics import ANALYSIS_SUMMARY_MAX_CHARS, RISKS_MAX_ITEMS
 # ---------------------------------------------------------------------------
 
 
+# PROMPT SURFACE. This docstring is sent, and a Field(description=...) on a
+# ProblemType-typed field would be discarded, so this text is the only steering
+# available on GenResult.problem_type. Stage 3 authors it properly alongside the
+# system prompt. Until then it stays factual and short.
 class ProblemType(StrEnum):
-    """The supervised task inferred from the target column."""
+    """The supervised learning task implied by the target column."""
 
     BINARY_CLASSIFICATION = "binary_classification"
     MULTICLASS_CLASSIFICATION = "multiclass_classification"
     REGRESSION = "regression"
 
 
+# PROMPT SURFACE, and the same $ref trap as ProblemType: a Field description on
+# GenResult.primary_metric would be dropped, so this docstring is the only lever.
+#
+# Rationale, for humans: the set is closed rather than free text so the model
+# cannot invent a metric the validator has no rule for and the frontend cannot
+# label. Which member applies is decided in Python by the balance bands in
+# heuristics.py, never by the model. See heuristics.md for the selection tables
+# and for why roc_auc is reachable only as a secondary.
 class Metric(StrEnum):
-    """Closed set of primary metrics.
-
-    Closed rather than free text so the LLM cannot invent a metric that the
-    validator has no rule for, and so the frontend can label it confidently.
-    Selection is driven by the balance bands in heuristics.py.
-    """
+    """An evaluation metric. Use the metric supplied in the profile."""
 
     ACCURACY = "accuracy"
     F1 = "f1"
@@ -50,13 +80,15 @@ class Metric(StrEnum):
     R2 = "r2"
 
 
+# Not prompt surface today: ProfileCard reaches the model as serialised facts in
+# the prompt body, not as a response schema, so no docstring here is sent.
+#
+# Deliberately not the pandas dtype. A column stored as int64 may be a boolean
+# flag, an identifier, or a genuine count, and the preprocessing implied by each
+# is different. The split between discrete and continuous is governed by
+# NUMERIC_DISCRETE_MAX_UNIQUE.
 class InferredType(StrEnum):
-    """Output of the dtype classification ladder.
-
-    Deliberately not the pandas dtype. A column stored as int64 may be a
-    boolean flag, an identifier, or a genuine count, and the preprocessing
-    implied by each is different.
-    """
+    """Result of the dtype classification ladder."""
 
     BOOLEAN = "boolean"
     DATETIME = "datetime"
@@ -67,13 +99,12 @@ class InferredType(StrEnum):
     UNKNOWN = "unknown"
 
 
+# A flag is a fact with a threshold behind it, never a decision. Dropping a
+# column is the model's call in GenResult.dropped_columns; the profiler only
+# reports. Every member maps to exactly one constant in heuristics.py, which is
+# why there is no flag here without a number behind it.
 class ColumnFlag(StrEnum):
-    """Advisory findings attached to a column by the profiler.
-
-    A flag is a fact with a threshold behind it, never a decision. Dropping a
-    column is the LLM's call in GenResult.dropped_columns; the profiler only
-    reports. Every member here maps to exactly one constant in heuristics.py.
-    """
+    """Advisory finding attached to a column by the profiler."""
 
     ALL_MISSING = "all_missing"
     HIGH_MISSING = "high_missing"
@@ -85,26 +116,22 @@ class ColumnFlag(StrEnum):
     POTENTIAL_LEAKAGE = "potential_leakage"
 
 
+# ERROR means the generated code is unsafe or provably broken and must be
+# surfaced as a failure. WARNING means it is likely wrong but runnable. INFO is
+# an observation that does not undermine the pipeline.
 class ValidationSeverity(StrEnum):
-    """Severity of a static validation finding.
-
-    ERROR means the generated code is unsafe or provably broken and must be
-    surfaced as a failure. WARNING means it is likely wrong but runnable. INFO
-    is an observation that does not undermine the pipeline.
-    """
+    """Severity of a static validation finding."""
 
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"
 
 
+# Five working states plus a terminal failure. There is no EXECUTING state:
+# MVP-1 does not run generated code, and MVP-1.5 execution is a separate opt-in
+# step rather than a stage of this pipeline.
 class JobState(StrEnum):
-    """Lifecycle of one dataset through the MVP-1 flow.
-
-    Five working states plus a terminal failure. There is no EXECUTING state:
-    MVP-1 does not run generated code, and MVP-1.5 execution is a separate
-    opt-in step rather than a stage of this pipeline.
-    """
+    """Lifecycle of one dataset through the MVP-1 flow."""
 
     PENDING = "pending"
     PROFILING = "profiling"
@@ -119,12 +146,11 @@ class JobState(StrEnum):
 # ---------------------------------------------------------------------------
 
 
+# Contains no values from the file beyond sample_values, argued below.
+# Statistics only, so that a ProfileCard can be placed in a prompt without
+# handing the model the user's data.
 class ColumnProfile(BaseModel):
-    """Computed facts about a single column.
-
-    Contains no values from the file. Statistics only, so that a ProfileCard
-    can be placed in a prompt without leaking the user's data.
-    """
+    """Computed facts about a single column."""
 
     name: str
     inferred_type: InferredType
@@ -183,11 +209,10 @@ class ColumnProfile(BaseModel):
     flags: list[ColumnFlag] = Field(default_factory=list)
 
 
+# This is the only object llm.py accepts. It never accepts a DataFrame. That
+# signature is the enforcement point for the core rule, so do not widen it.
 class ProfileCard(BaseModel):
-    """The complete factual description of a dataset.
-
-    This is the only object llm.py accepts. It never accepts a DataFrame.
-    """
+    """The complete factual description of a dataset."""
 
     dataset_id: str
     filename: str
@@ -236,26 +261,27 @@ class ProfileCard(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+# PROMPT SURFACE. These three are nested under list[] fields on GenResult, so
+# both the class docstring and the per-field descriptions reach the model.
+# Stage 3 authors all of it against the system prompt.
 class DroppedColumn(BaseModel):
-    """A column the strategy excludes from the feature set, and why."""
+    """A column excluded from the feature set, with the reason for excluding it."""
 
     column: str
     reason: str
 
 
 class PreprocessingStep(BaseModel):
-    """One transformation in the pipeline, with the columns it applies to."""
+    """One transformation applied to named columns before training."""
 
-    step: str = Field(description="Short name, for example 'median imputation'.")
+    step: str = Field(description="Short name of the transformation.")
     columns: list[str]
     rationale: str
 
 
+# Carries no score field of any kind, for the reason given above GenResult.
 class CandidateModel(BaseModel):
-    """A model the strategy proposes trying.
-
-    Carries no score field of any kind. See the note on GenResult.
-    """
+    """A model worth trying for this dataset."""
 
     name: str
     library: str
@@ -276,8 +302,18 @@ class CandidateModel(BaseModel):
 # added. MVP-1 does not execute the generated code, so any score, accuracy, or
 # expected performance figure the model produced would be fabricated, and it
 # would arrive wearing the same formatting as a measured one.
+#
+# Verified, not assumed. google-genai 2.17.0 emits `propertyOrdering` matching
+# this declaration order at the top level and inside all three nested objects,
+# and ten live generations returned the fields in this order 9 times out of 9
+# that reached the model. See docs/spike-01-gemini-structured-output.md.
+#
+# PROMPT SURFACE below this line. The docstring becomes the schema description
+# and every Field(description=...) is sent, except on problem_type and
+# primary_metric where it is discarded. See the note at the top of this file.
 class GenResult(BaseModel):
-    """The LLM's complete response: a strategy, then the code implementing it."""
+    """A modelling strategy for one tabular dataset, followed by the code that
+    implements exactly that strategy."""
 
     problem_type: ProblemType
     target_column: str

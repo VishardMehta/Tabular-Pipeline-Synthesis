@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import io
 
+import pytest
+
 from app.models import GenResult, ValidationSeverity
 
 
@@ -55,6 +57,25 @@ def test_generate_result_field_order_is_preserved_over_the_wire(client):
     """The plan-then-code ordering has to survive serialisation, not just the class."""
     response = client.post("/api/datasets/abc/generate", json={})
     assert list(response.json()["result"].keys()) == list(GenResult.model_fields.keys())
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Stage 3: author model-facing Field(description=...) on every GenResult "
+    "field alongside the system prompt. Descriptions are prompt surface and are "
+    "currently empty, so the schema steers generation not at all. Note that "
+    "problem_type and primary_metric cannot take a field description - the SDK "
+    "discards it when inlining the enum $ref - so those two are steered by the "
+    "ProblemType and Metric docstrings instead.",
+)
+def test_gen_result_fields_carry_model_facing_descriptions():
+    """Descriptions reach the model. Empty ones waste the main steering lever."""
+    undescribed = [
+        name
+        for name, field in GenResult.model_fields.items()
+        if field.description is None and name not in {"problem_type", "primary_metric"}
+    ]
+    assert not undescribed, f"no description on: {undescribed}"
 
 
 def test_gen_result_cannot_hold_a_metric_value():
