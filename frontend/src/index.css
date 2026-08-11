@@ -1,0 +1,258 @@
+@import "tailwindcss";
+
+/**
+ * Design tokens for Agentic AutoML.
+ *
+ * Source: docs/Agentic_AutoML_Apple_HIG_Design_System.md, section 4 (token
+ * structure), section 5 (color), section 6 (typography), section 7.3
+ * (spacing - Tailwind's own 4px-derived scale already matches this exactly,
+ * so no custom spacing tokens are defined here), section 29 (shadows),
+ * section 30 (radius), section 57 (recommended visual direction).
+ *
+ * Semantic names only (--color-surface, not --color-gray-50). Hex values
+ * were chosen and then checked for contrast, not chosen for how they look
+ * in isolation - see the ratios noted next to each text color below.
+ */
+@theme {
+  /* Surfaces */
+  --color-bg: #f7f7f8;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f1f2f4;
+  --color-surface-hover: #f5f6f7;
+  --color-surface-elevated: #ffffff;
+
+  /* Text - ratios are against --color-surface (white) */
+  --color-text-primary: #16171b; /* 17.9:1 */
+  --color-text-secondary: #5b5f6b; /* 6.4:1 */
+  --color-text-tertiary: #82868f; /* 3.65:1 - large text and secondary metadata only */
+  --color-text-disabled: #c1c4cc;
+  --color-text-on-accent: #ffffff;
+
+  /* Semantic */
+  --color-accent: #3654d6; /* 6.2:1 on white */
+  --color-accent-hover: #2c46b8; /* 7.85:1 on white */
+  --color-accent-subtle: #eef1fc;
+  --color-success: #106b40; /* 6.56:1 on white, 5.87:1 on success-subtle */
+  --color-success-subtle: #e6f6ee;
+  --color-warning: #9a5b00; /* 5.43:1 on white, 4.86:1 on warning-subtle */
+  --color-warning-subtle: #fdf1dc;
+  --color-error: #c22a2a; /* 5.74:1 on white, 4.94:1 on error-subtle */
+  --color-error-subtle: #fbeaea;
+  --color-info: var(--color-accent); /* interactive and informational share one meaning - section 5.2 */
+  --color-info-subtle: var(--color-accent-subtle);
+
+  /* Borders */
+  --color-separator: #e7e7ea;
+  --color-border: #dadbdf;
+  --color-focus-ring: var(--color-accent);
+
+  /* Typography - semantic roles, not arbitrary sizes. Section 6.1. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI",
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, monospace;
+
+  --text-display: 3.25rem; /* 52px */
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 600;
+
+  --text-large-title: 2.25rem; /* 36px */
+  --text-large-title--line-height: 1.15;
+  --text-large-title--font-weight: 600;
+
+  --text-title: 1.625rem; /* 26px */
+  --text-title--line-height: 1.25;
+  --text-title--font-weight: 600;
+
+  --text-heading: 1.1875rem; /* 19px */
+  --text-heading--line-height: 1.3;
+  --text-heading--font-weight: 600;
+
+  --text-body: 1rem; /* 16px */
+  --text-body--line-height: 1.55;
+  --text-body--font-weight: 400;
+
+  --text-secondary-size: 0.875rem; /* 14px - "secondary" is a color token above, avoid colliding */
+  --text-secondary-size--line-height: 1.45;
+
+  --text-caption: 0.75rem; /* 12px */
+  --text-caption--line-height: 1.4;
+  --text-caption--font-weight: 500;
+
+  --text-code: 0.8125rem; /* 13px */
+  --text-code--line-height: 1.65;
+
+  /* Radius. Section 30: a small number of radii, not everything a pill. */
+  --radius-sm: 0.5rem; /* 8px - inputs, buttons, compact elements */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1rem; /* 16px - major surfaces, upload zone */
+
+  /* Shadows. Section 29: very restrained, no huge diffuse or colored shadows. */
+  --shadow-xs: 0 1px 2px rgba(16, 17, 27, 0.04);
+  --shadow-sm: 0 1px 2px rgba(16, 17, 27, 0.04), 0 2px 6px rgba(16, 17, 27, 0.05);
+  --shadow-md: 0 4px 12px rgba(16, 17, 27, 0.08), 0 2px 4px rgba(16, 17, 27, 0.04);
+  --shadow-lg: 0 16px 40px rgba(16, 17, 27, 0.14), 0 4px 10px rgba(16, 17, 27, 0.06);
+
+  --content-max-width: 1440px;
+  --prose-max-width: 65ch;
+}
+
+/*
+ * Dark mode: intentionally deferred this session.
+ *
+ * TODO(dark-mode): redefine every --color-* token above inside this block
+ * with dark-appropriate values before shipping dark mode. The semantic
+ * *role* of each token must stay the same (surface is still "the card
+ * background", not renamed) - only the value changes. See section 5.4:
+ * do not implement dark mode by inverting light values. Until this block is
+ * filled in, prefers-color-scheme: dark users see the light palette, which
+ * is legible and correct, just not adapted.
+ */
+@media (prefers-color-scheme: dark) {
+}
+
+@layer base {
+  * {
+    border-color: var(--color-separator);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+  }
+
+  /* Never remove the focus indicator without replacing it. Section 34. */
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-subtle);
+    color: var(--color-text-primary);
+  }
+}
+
+/*
+ * Motion. Section 32: subtle, short, purposeful. Durations centralised here
+ * rather than repeated as magic numbers in every component.
+ */
+:root {
+  --duration-fast: 150ms; /* micro interaction, skeleton-to-content fade */
+  --duration-normal: 220ms; /* screen transitions */
+  --duration-slow: 300ms; /* large transitions */
+  --ease-out-standard: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer utilities {
+  /* Screen transitions: fade plus a small translate, never a side-slide. */
+  .screen-enter {
+    animation: screen-enter var(--duration-normal) var(--ease-out-standard) both;
+  }
+
+  @keyframes screen-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Skeleton to content: fade only, no translate. */
+  .content-fade-in {
+    animation: content-fade-in var(--duration-fast) ease-out both;
+  }
+
+  @keyframes content-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-secondary) 25%,
+      var(--color-surface-hover) 37%,
+      var(--color-surface-secondary) 63%
+    );
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  /* Checklist rows: light stagger on entry, capped so a long list never
+     feels slow to finish appearing. Applied via style="--stagger-index: N". */
+  .stagger-row {
+    animation: stagger-row var(--duration-normal) var(--ease-out-standard) both;
+    animation-delay: calc(min(var(--stagger-index, 0), 10) * 28ms);
+  }
+
+  @keyframes stagger-row {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* A named step's check mark animates in on completion, rather than a
+     spinner morphing into a checkmark. */
+  .check-pop {
+    animation: check-pop var(--duration-normal) var(--ease-out-standard) both;
+  }
+
+  @keyframes check-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* Section 32 / Rule 11: respect reduced-motion without exception. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

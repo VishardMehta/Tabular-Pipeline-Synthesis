@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ML Strategy - Agentic AutoML</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed-variant": "#832600",
+                      "outline": "#727687",
+                      "surface-container-high": "#e2e8f8",
+                      "primary": "#0050cb",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#424656",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "on-background": "#151c27",
+                      "on-surface": "#151c27",
+                      "data-mono": "#1D4ED8",
+                      "secondary-container": "#e0e2ef",
+                      "primary-fixed-dim": "#b3c5ff",
+                      "on-tertiary-container": "#fff6f4",
+                      "tertiary-container": "#cc4204",
+                      "surface-tint": "#0054d6",
+                      "surface-container-lowest": "#ffffff",
+                      "status-warning": "#FACC15",
+                      "secondary": "#5b5e69",
+                      "on-primary-container": "#f8f7ff",
+                      "surface-container-low": "#f0f3ff",
+                      "on-secondary-fixed-variant": "#444651",
+                      "surface-background": "#F7F8FB",
+                      "inverse-on-surface": "#ebf1ff",
+                      "tertiary": "#a33200",
+                      "inverse-primary": "#b3c5ff",
+                      "on-primary-fixed-variant": "#003fa4",
+                      "outline-variant": "#c2c6d8",
+                      "tertiary-fixed-dim": "#ffb59d",
+                      "inverse-surface": "#2a313d",
+                      "secondary-fixed-dim": "#c4c6d2",
+                      "surface-variant": "#dce2f3",
+                      "on-secondary-container": "#61646f",
+                      "secondary-fixed": "#e0e2ef",
+                      "primary-container": "#0066ff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed": "#390c00",
+                      "surface-dim": "#d3daea",
+                      "surface-card": "#FFFFFF",
+                      "on-secondary-fixed": "#181b24",
+                      "surface": "#f9f9ff",
+                      "on-error": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-container-highest": "#dce2f3",
+                      "tertiary-fixed": "#ffdbd0",
+                      "background": "#f9f9ff",
+                      "border-subtle": "#E5E7EB",
+                      "surface-bright": "#f9f9ff",
+                      "primary-fixed": "#dae1ff",
+                      "surface-container": "#e7eefe",
+                      "on-primary": "#ffffff",
+                      "on-primary-fixed": "#001849"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "container-max": "1440px",
+                      "margin-desktop": "32px",
+                      "margin-mobile": "16px",
+                      "base-unit": "4px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "data-code": [
+                              "JetBrains Mono"
+                      ],
+                      "data-display": [
+                              "JetBrains Mono"
+                      ],
+                      "body-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-sm": [
+                              "Hanken Grotesk"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "data-code": [
+                              "12px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "data-display": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.surface-background');
+        }
+        
+        /* Ambient Natural Shadow */
+        .ambient-shadow {
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="font-body-sm text-body-sm text-on-surface antialiased min-h-screen pt-16 md:pl-64 flex flex-col">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center w-full px-gutter h-16 fixed top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline flat no shadows docked full-width top-0">
+<div class="flex items-center gap-8">
+<div class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+                Agentic AutoML
+            </div>
+<ul class="hidden md:flex items-center gap-6">
+<!-- Dashboard -->
+<li class="h-16 flex items-center">
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Dashboard</a>
+</li>
+<!-- Workflows -->
+<li class="h-16 flex items-center">
+<a class="text-body-sm font-body-sm text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-1 opacity-80 transition-all duration-150" href="#">Workflows</a>
+</li>
+<!-- Deployments -->
+<li class="h-16 flex items-center">
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Deployments</a>
+</li>
+<!-- Monitoring -->
+<li class="h-16 flex items-center">
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Monitoring</a>
+</li>
+</ul>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+<img alt="User profile" class="object-cover w-full h-full" data-alt="A professional headshot of a data scientist in a bright, modern office space. The lighting is soft and even, highlighting sharp features and a focused expression. The background is slightly blurred with subtle hints of blue light and glass partitions, conveying a high-tech corporate environment suitable for an Agentic AutoML dashboard avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACK-cckK7v-zp1GGRuE8uWq_Ik_0dmeLMMmkC0-jdIjvGRkJE6VMSCfjzSvo8D21uJ9XA2heYsjQwR8HKwZ68LLguOy8h_TD66kD8rvqA-z_5zkNcYCckWNaqeI3IwCCTT6XHBmnY3xK0pq8WOoG-WreM2QjOVc_xCJjTVFBMuK2UfVSKNLr6USVl-OVN-42huZS1rm8nEppElTHfa5B3I8x2Bn-gllkqU9OiMWqziU1BZikf3kiOfLw"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col w-64 h-full border-r border-outline-variant py-4 px-2 bg-surface-container-low dark:bg-surface-container-lowest fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flat no shadows">
+<div class="px-4 mb-6">
+<h2 class="text-body-lg font-headline-md font-semibold text-on-surface dark:text-on-surface-variant">Workflow Status</h2>
+<p class="text-data-code font-data-code text-secondary mt-1">Active Session: #ML-2904</p>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Upload -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="cloud_upload">cloud_upload</span>
+<span class="text-body-sm font-body-sm">Upload</span>
+</a>
+<!-- Target Selection -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="track_changes">track_changes</span>
+<span class="text-body-sm font-body-sm">Target Selection</span>
+</a>
+<!-- Data Profiling -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="analytics">analytics</span>
+<span class="text-body-sm font-body-sm">Data Profiling</span>
+</a>
+<!-- ML Strategy -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-r-lg bg-primary-container dark:bg-primary-fixed-variant text-on-primary-container dark:text-on-primary-fixed-variant border-r-4 border-primary scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="psychology">psychology</span>
+<span class="text-body-sm font-body-sm font-medium">ML Strategy</span>
+</a>
+<!-- Pipeline Generation -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="account_tree">account_tree</span>
+<span class="text-body-sm font-body-sm">Pipeline Generation</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-secondary hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="history">history</span>
+<span class="text-body-sm font-body-sm">Audit Trail</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-secondary hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="terminal">terminal</span>
+<span class="text-body-sm font-body-sm">API Logs</span>
+</a>
+<div class="px-4 mt-4">
+<button class="w-full py-2 bg-transparent border border-outline text-primary rounded hover:bg-surface-container transition-colors text-body-sm font-body-sm font-medium">
+                    New Experiment
+                </button>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-margin-mobile md:p-margin-desktop w-full max-w-[container-max] mx-auto overflow-y-auto">
+<header class="mb-8 flex justify-between items-end">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface">Step 4: ML Strategy Formulation</h1>
+<p class="text-body-lg font-body-lg text-secondary mt-2 max-w-3xl">
+                    Automated analysis complete. Review the inferred preprocessing pipeline and selected candidate architectures before proceeding to generation.
+                </p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded font-body-sm font-medium hover:bg-surface-tint transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                Generate Pipelines
+            </button>
+</header>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+<!-- Left Column: Preprocessing & Dropped Columns -->
+<div class="xl:col-span-7 flex flex-col gap-8">
+<!-- Preprocessing Pipeline List -->
+<section class="bg-surface-card border border-border-subtle rounded-xl p-6 ambient-shadow hover:border-primary transition-colors duration-300">
+<div class="flex items-center justify-between border-b border-border-subtle pb-4 mb-4">
+<h3 class="text-headline-md font-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="format_list_numbered">format_list_numbered</span>
+                            Inferred Preprocessing Pipeline
+                        </h3>
+</div>
+<div class="space-y-4">
+<!-- Step 1 -->
+<div class="flex gap-4 items-start relative">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-low text-primary flex items-center justify-center font-bold text-body-sm border border-outline-variant z-10">1</div>
+<div class="flex-1 pb-4 border-b border-border-subtle">
+<h4 class="font-medium text-on-surface mb-1">Missing Value Imputation</h4>
+<p class="text-secondary text-body-sm mb-2">Median imputation applied to continuous features with low missingness (&lt; 5%).</p>
+<div class="bg-surface-background p-2 rounded text-data-code font-data-code text-on-surface-variant">
+                                    Targeted: ['age', 'income_est', 'credit_score']
+                                </div>
+</div>
+<div class="absolute left-4 top-8 bottom-0 w-px bg-border-subtle -z-0"></div>
+</div>
+<!-- Step 2 -->
+<div class="flex gap-4 items-start relative">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-low text-primary flex items-center justify-center font-bold text-body-sm border border-outline-variant z-10">2</div>
+<div class="flex-1 pb-4 border-b border-border-subtle">
+<h4 class="font-medium text-on-surface mb-1">Categorical Encoding</h4>
+<p class="text-secondary text-body-sm mb-2">One-Hot Encoding for low-cardinality; Target Encoding for high-cardinality.</p>
+<div class="bg-surface-background p-2 rounded text-data-code font-data-code text-on-surface-variant flex gap-2 flex-wrap">
+<span class="bg-surface-variant px-2 py-1 rounded">OHE: ['region', 'plan_type']</span>
+<span class="bg-surface-variant px-2 py-1 rounded">TE: ['zip_code', 'merchant_id']</span>
+</div>
+</div>
+<div class="absolute left-4 top-8 bottom-0 w-px bg-border-subtle -z-0"></div>
+</div>
+<!-- Step 3 -->
+<div class="flex gap-4 items-start">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-low text-primary flex items-center justify-center font-bold text-body-sm border border-outline-variant z-10">3</div>
+<div class="flex-1 pb-2">
+<h4 class="font-medium text-on-surface mb-1">Feature Scaling</h4>
+<p class="text-secondary text-body-sm mb-2">StandardScaler applied for distance-based models in candidate pool.</p>
+<div class="bg-surface-background p-2 rounded text-data-code font-data-code text-on-surface-variant">
+                                    Targeted: All remaining numeric features
+                                </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Dropped Columns Table -->
+<section class="bg-surface-card border border-border-subtle rounded-xl p-6 ambient-shadow hover:border-primary transition-colors duration-300">
+<h3 class="text-headline-md font-headline-md text-on-surface mb-4">Dropped Features Overview</h3>
+<div class="overflow-x-auto rounded-lg border border-border-subtle">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-background border-b border-border-subtle">
+<th class="py-3 px-4 font-headline-md font-semibold text-body-sm text-on-surface">Feature Name</th>
+<th class="py-3 px-4 font-headline-md font-semibold text-body-sm text-on-surface">Reason</th>
+<th class="py-3 px-4 font-headline-md font-semibold text-body-sm text-on-surface">Impact</th>
+</tr>
+</thead>
+<tbody class="font-data-code text-data-code text-secondary">
+<tr class="border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-4 text-data-mono">customer_id</td>
+<td class="py-3 px-4">Unique identifier (High Cardinality)</td>
+<td class="py-3 px-4"><span class="px-2 py-1 bg-surface-variant rounded text-on-surface-variant text-[10px]">Zero Info</span></td>
+</tr>
+<tr class="border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-4 text-data-mono">last_login_timestamp</td>
+<td class="py-3 px-4">Leaky feature (Correlated with target)</td>
+<td class="py-3 px-4"><span class="px-2 py-1 bg-error-container text-on-error-container rounded text-[10px] font-bold">High Risk</span></td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-4 text-data-mono">survey_notes_raw</td>
+<td class="py-3 px-4">Unstructured text (NLP disabled in config)</td>
+<td class="py-3 px-4"><span class="px-2 py-1 bg-surface-variant rounded text-on-surface-variant text-[10px]">Ignored</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Right Column: Candidate Models & Validation -->
+<div class="xl:col-span-5 flex flex-col gap-8">
+<!-- Validation Strategy Panel -->
+<section class="bg-surface-card border border-border-subtle rounded-xl p-6 ambient-shadow hover:border-primary transition-colors duration-300">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="rule">rule</span>
+<h3 class="text-headline-md font-headline-md text-on-surface">Validation Strategy</h3>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-background p-4 rounded-lg border border-outline-variant">
+<div class="text-label-caps font-label-caps text-secondary mb-1 uppercase">Method</div>
+<div class="font-medium text-on-surface">5-Fold Cross-Validation</div>
+</div>
+<div class="bg-surface-background p-4 rounded-lg border border-outline-variant">
+<div class="text-label-caps font-label-caps text-secondary mb-1 uppercase">Primary Metric</div>
+<div class="font-medium text-on-surface">ROC-AUC</div>
+</div>
+</div>
+<p class="text-body-sm text-secondary border-l-2 border-primary pl-3">
+                        Stratified sampling applied to ensure balanced class representation across all folds due to slight target imbalance (15% positive class).
+                    </p>
+</section>
+<!-- Candidate Models (Side-by-side on larger screens, stacking on small) -->
+<section>
+<h3 class="text-headline-md font-headline-md text-on-surface mb-4">Candidate Architectures</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
+<!-- Model Card 1 -->
+<div class="bg-surface-card border border-border-subtle rounded-xl p-4 ambient-shadow hover:border-primary transition-colors duration-300 flex flex-col">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-headline-md font-semibold text-on-surface">LightGBM Classifier</h4>
+<span class="bg-surface-container-low text-primary text-[10px] font-bold px-2 py-1 rounded">Fast</span>
+</div>
+<p class="text-body-sm text-secondary mb-4 flex-1">Gradient boosting framework that uses tree based learning algorithms. Excellent for tabular data.</p>
+<div class="text-data-code font-data-code text-xs text-on-surface-variant bg-surface-background p-2 rounded">
+                                Hyper-parameter search space: Default Grid
+                            </div>
+</div>
+<!-- Model Card 2 -->
+<div class="bg-surface-card border border-border-subtle rounded-xl p-4 ambient-shadow hover:border-primary transition-colors duration-300 flex flex-col">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-headline-md font-semibold text-on-surface">XGBoost</h4>
+<span class="bg-surface-container-low text-primary text-[10px] font-bold px-2 py-1 rounded">Robust</span>
+</div>
+<p class="text-body-sm text-secondary mb-4 flex-1">Optimized distributed gradient boosting library designed to be highly efficient, flexible and portable.</p>
+<div class="text-data-code font-data-code text-xs text-on-surface-variant bg-surface-background p-2 rounded">
+                                Hyper-parameter search space: Extended Bayseian
+                            </div>
+</div>
+<!-- Model Card 3 -->
+<div class="bg-surface-card border border-border-subtle rounded-xl p-4 ambient-shadow hover:border-primary transition-colors duration-300 flex flex-col opacity-75">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-headline-md font-semibold text-on-surface">Random Forest</h4>
+<span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded">Baseline</span>
+</div>
+<p class="text-body-sm text-secondary mb-4 flex-1">Ensemble learning method operating by constructing a multitude of decision trees.</p>
+<div class="text-data-code font-data-code text-xs text-on-surface-variant bg-surface-background p-2 rounded">
+                                Status: Baseline reference only
+                            </div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

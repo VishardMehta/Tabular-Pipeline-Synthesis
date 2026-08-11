@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agentic AutoML - Select Target</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#832600",
+                        "outline": "#727687",
+                        "surface-container-high": "#e2e8f8",
+                        "primary": "#0050cb",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#424656",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#151c27",
+                        "on-surface": "#151c27",
+                        "data-mono": "#1D4ED8",
+                        "secondary-container": "#e0e2ef",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-tertiary-container": "#fff6f4",
+                        "tertiary-container": "#cc4204",
+                        "surface-tint": "#0054d6",
+                        "surface-container-lowest": "#ffffff",
+                        "status-warning": "#FACC15",
+                        "secondary": "#5b5e69",
+                        "on-primary-container": "#f8f7ff",
+                        "surface-container-low": "#f0f3ff",
+                        "on-secondary-fixed-variant": "#444651",
+                        "surface-background": "#F7F8FB",
+                        "inverse-on-surface": "#ebf1ff",
+                        "tertiary": "#a33200",
+                        "inverse-primary": "#b3c5ff",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "outline-variant": "#c2c6d8",
+                        "tertiary-fixed-dim": "#ffb59d",
+                        "inverse-surface": "#2a313d",
+                        "secondary-fixed-dim": "#c4c6d2",
+                        "surface-variant": "#dce2f3",
+                        "on-secondary-container": "#61646f",
+                        "secondary-fixed": "#e0e2ef",
+                        "primary-container": "#0066ff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#390c00",
+                        "surface-dim": "#d3daea",
+                        "surface-card": "#FFFFFF",
+                        "on-secondary-fixed": "#181b24",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#dce2f3",
+                        "tertiary-fixed": "#ffdbd0",
+                        "background": "#f9f9ff",
+                        "border-subtle": "#E5E7EB",
+                        "surface-bright": "#f9f9ff",
+                        "primary-fixed": "#dae1ff",
+                        "surface-container": "#e7eefe",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001849"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "container-max": "1440px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "base-unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "data-code": ["JetBrains Mono"],
+                        "data-display": ["JetBrains Mono"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "data-code": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "data-display": ["14px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface-background text-on-surface font-body-sm text-body-sm min-h-screen pt-16 md:pl-64">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center w-full px-gutter h-16 fixed top-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-6">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim">Agentic AutoML</span>
+<div class="hidden md:flex gap-4">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-1 opacity-80 transition-all duration-150" href="#">Workflows</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Deployments</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Monitoring</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full object-cover bg-surface-container-high border border-outline-variant" data-alt="A small circular profile picture of an AI data scientist. Minimalist, professional lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1cy6cM8jYrkKjKLfvZM9mqfrfyNIN7Oo5nRgzJQM8qkOc8EPDxa0a9SdCryZ_1mWmYG30Dcukzmncr6V7OmiCW1UN-XLEqCM0e8xYYn3wtwXAeEcSatf5s9_L7855YNPWIwPWDRvBaJl2m4lTMSNh3KwozL1g3EbAMLrqHSNXte82NEN9RlpIyqsLsOIPVS9UL4-S4-qvSg6qvm6pQKHkBvpV2KMpEeX5q3AnYgU1MiRWqlnFZe2elw"/>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col w-64 h-full border-r border-outline-variant py-4 px-2 bg-surface-container-low dark:bg-surface-container-lowest fixed left-0 top-16 h-[calc(100vh-64px)] z-40">
+<div class="px-4 mb-6">
+<h2 class="text-body-lg font-headline-md font-semibold text-on-surface dark:text-on-surface-variant">Workflow Status</h2>
+<p class="text-secondary font-data-code text-data-code mt-1">Active Session: #ML-2904</p>
+</div>
+<button class="mx-4 mb-6 bg-primary-container text-on-primary-container font-body-sm text-body-sm py-2 px-4 rounded hover:bg-primary transition-colors shadow-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span> New Experiment
+        </button>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="cloud_upload">cloud_upload</span>
+<span>Upload</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 bg-primary-container dark:bg-primary-fixed-variant text-on-primary-container dark:text-on-primary-fixed-variant border-r-4 border-primary rounded-r-lg scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="track_changes">track_changes</span>
+<span>Target Selection</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="analytics">analytics</span>
+<span>Data Profiling</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="psychology">psychology</span>
+<span>ML Strategy</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="account_tree">account_tree</span>
+<span>Pipeline Generation</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-4 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="history">history</span>
+<span>Audit Trail</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="terminal">terminal</span>
+<span>API Logs</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="p-margin-mobile md:p-margin-desktop max-w-container-max mx-auto">
+<div class="mb-8">
+<div class="flex items-center gap-2 mb-2">
+<span class="text-primary font-label-caps text-label-caps uppercase">Step 2 of 5</span>
+<span class="material-symbols-outlined text-secondary text-sm">chevron_right</span>
+<span class="font-data-code text-data-code text-secondary">telco_churn.csv</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface mb-2">Select Target Variable</h1>
+<p class="text-secondary font-body-lg text-body-lg max-w-2xl">Identify the column you want the model to predict. The table below provides a high-density profile of your dataset to assist in selection.</p>
+</div>
+<!-- Data Table Card -->
+<div class="bg-surface-card rounded-lg border border-border-subtle overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-border-subtle">
+<tr>
+<th class="py-3 px-4 font-headline-md text-body-sm font-semibold text-on-surface-variant w-12"></th>
+<th class="py-3 px-4 font-headline-md text-body-sm font-semibold text-on-surface-variant">Column Name</th>
+<th class="py-3 px-4 font-headline-md text-body-sm font-semibold text-on-surface-variant">Inferred Type</th>
+<th class="py-3 px-4 font-headline-md text-body-sm font-semibold text-on-surface-variant">Unique Values</th>
+<th class="py-3 px-4 font-headline-md text-body-sm font-semibold text-on-surface-variant">Missing Data</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer group">
+<td class="py-3 px-4"><input class="text-primary focus:ring-primary border-outline-variant bg-surface" name="target" type="radio"/></td>
+<td class="py-3 px-4 font-data-display text-data-display text-on-surface">customerID</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-data-code font-medium bg-surface-container-highest text-on-surface-variant">String</span>
+</td>
+<td class="py-3 px-4 font-data-code text-data-code text-secondary">7043</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-24 h-1.5 bg-surface-variant rounded-full overflow-hidden"><div class="h-full bg-primary w-0"></div></div>
+<span class="font-data-code text-data-code text-secondary">0%</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer group">
+<td class="py-3 px-4"><input class="text-primary focus:ring-primary border-outline-variant bg-surface" name="target" type="radio"/></td>
+<td class="py-3 px-4 font-data-display text-data-display text-on-surface">tenure</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-data-code font-medium bg-surface-container-highest text-on-surface-variant">Integer</span>
+</td>
+<td class="py-3 px-4 font-data-code text-data-code text-secondary">73</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-24 h-1.5 bg-surface-variant rounded-full overflow-hidden"><div class="h-full bg-primary w-0"></div></div>
+<span class="font-data-code text-data-code text-secondary">0%</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer group">
+<td class="py-3 px-4"><input class="text-primary focus:ring-primary border-outline-variant bg-surface" name="target" type="radio"/></td>
+<td class="py-3 px-4 font-data-display text-data-display text-on-surface">MonthlyCharges</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-data-code font-medium bg-surface-container-highest text-on-surface-variant">Float</span>
+</td>
+<td class="py-3 px-4 font-data-code text-data-code text-secondary">1585</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-24 h-1.5 bg-surface-variant rounded-full overflow-hidden"><div class="h-full bg-status-warning w-[1%]"></div></div>
+<span class="font-data-code text-data-code text-secondary">1%</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer group">
+<td class="py-3 px-4"><input class="text-primary focus:ring-primary border-outline-variant bg-surface" name="target" type="radio"/></td>
+<td class="py-3 px-4 font-data-display text-data-display text-on-surface">Contract</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-data-code font-medium bg-surface-container-highest text-on-surface-variant">Categorical</span>
+</td>
+<td class="py-3 px-4 font-data-code text-data-code text-secondary">3</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-24 h-1.5 bg-surface-variant rounded-full overflow-hidden"><div class="h-full bg-primary w-0"></div></div>
+<span class="font-data-code text-data-code text-secondary">0%</span>
+</div>
+</td>
+</tr>
+<!-- Selected Row -->
+<tr class="bg-primary-fixed-dim/20 border-l-4 border-primary transition-colors cursor-pointer">
+<td class="py-3 px-4 pl-3"><input checked="" class="text-primary focus:ring-primary border-outline-variant bg-surface" name="target" type="radio"/></td>
+<td class="py-3 px-4 font-data-display text-data-display text-data-mono font-bold">Churn</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-data-code font-medium bg-primary-container text-on-primary-container">Boolean</span>
+</td>
+<td class="py-3 px-4 font-data-code text-data-code text-secondary">2</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-24 h-1.5 bg-surface-variant rounded-full overflow-hidden"><div class="h-full bg-primary w-0"></div></div>
+<span class="font-data-code text-data-code text-secondary">0%</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-surface-container-low border-t border-border-subtle flex justify-end gap-3">
+<button class="px-4 py-2 border border-outline-variant text-on-surface font-body-sm text-body-sm rounded hover:bg-surface-container-highest transition-colors">Cancel</button>
+<button class="px-6 py-2 bg-primary text-on-primary font-body-sm text-body-sm rounded hover:bg-primary-container transition-colors shadow-sm flex items-center gap-2">
+                    Confirm Target <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>

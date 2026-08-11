@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agentic AutoML - Upload</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbd0",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#fff6f4",
+                        "on-background": "#1b1c1c",
+                        "secondary-fixed-dim": "#b3c5ff",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#303031",
+                        "on-primary-fixed": "#001849",
+                        "surface-variant": "#e4e2e2",
+                        "tertiary-container": "#cc4204",
+                        "tertiary-fixed-dim": "#ffb59d",
+                        "secondary-fixed": "#dae1ff",
+                        "on-secondary-container": "#294487",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#832600",
+                        "on-primary-fixed-variant": "#003fa4",
+                        "surface-tint": "#0054d6",
+                        "outline": "#727687",
+                        "surface-dim": "#dbdad9",
+                        "secondary-container": "#9bb4fe",
+                        "secondary": "#425ca0",
+                        "surface-container-high": "#e9e8e7",
+                        "surface-container-highest": "#e4e2e2",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#424656",
+                        "surface-bright": "#fbf9f8",
+                        "primary-fixed": "#dae1ff",
+                        "inverse-on-surface": "#f2f0f0",
+                        "inverse-primary": "#b3c5ff",
+                        "on-tertiary-fixed": "#390c00",
+                        "surface-container-low": "#f5f3f3",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1b1c1c",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#a33200",
+                        "surface": "#fbf9f8",
+                        "primary": "#0050cb",
+                        "primary-container": "#0066ff",
+                        "on-secondary-fixed-variant": "#284386",
+                        "outline-variant": "#c2c6d8",
+                        "surface-container": "#efeded",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-secondary-fixed": "#001849",
+                        "on-primary-container": "#f8f7ff",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#fbf9f8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-tight": "4px",
+                        "max-width": "900px",
+                        "stack-base": "8px",
+                        "gutter": "16px",
+                        "margin": "24px",
+                        "row-height-compact": "32px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Hanken Grotesk"],
+                        "data-sm": ["JetBrains Mono"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "data-md": ["JetBrains Mono"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "data-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "data-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen flex flex-col antialiased">
+<!-- TopAppBar (from JSON) -->
+<header class="fixed top-0 w-full h-[56px] bg-surface dark:bg-background border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin max-w-max-width mx-auto w-full z-50">
+<div class="font-headline-sm text-headline-sm font-semibold text-on-surface dark:text-on-background">
+            Agentic AutoML
+        </div>
+<div class="flex items-center gap-stack-base">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed cursor-pointer active:opacity-80">check_circle</span>
+<span class="material-symbols-outlined text-outline dark:text-outline-variant hover:text-primary transition-colors duration-150 cursor-pointer active:opacity-80">radio_button_checked</span>
+<span class="material-symbols-outlined text-outline dark:text-outline-variant hover:text-primary transition-colors duration-150 cursor-pointer active:opacity-80">radio_button_unchecked</span>
+<span class="material-symbols-outlined text-outline dark:text-outline-variant hover:text-primary transition-colors duration-150 cursor-pointer active:opacity-80">radio_button_unchecked</span>
+<span class="material-symbols-outlined text-outline dark:text-outline-variant hover:text-primary transition-colors duration-150 cursor-pointer active:opacity-80">radio_button_unchecked</span>
+</div>
+</header>
+<div class="flex flex-1 pt-[56px]">
+<!-- SideNavBar (from JSON) -->
+<nav class="hidden lg:flex flex-col fixed left-0 top-[56px] h-[calc(100vh-56px)] w-64 bg-surface-container-low dark:bg-surface-container border-r border-outline-variant z-40">
+<div class="p-margin border-b border-outline-variant">
+<div class="font-headline-sm text-headline-sm font-bold text-primary">Workflow Status</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-stack-tight">Automated Audit Trail</div>
+</div>
+<ul class="flex-1 py-gutter">
+<li class="flex items-center gap-stack-base px-margin py-stack-base bg-secondary-container text-on-secondary-container font-semibold font-body-sm text-body-sm cursor-pointer scale-95 active:scale-90">
+<span class="material-symbols-outlined">upload_file</span> Upload
+                </li>
+<li class="flex items-center gap-stack-base px-margin py-stack-base text-on-surface-variant hover:bg-surface-container-high transition-all font-body-sm text-body-sm cursor-pointer scale-95 active:scale-90">
+<span class="material-symbols-outlined">ads_click</span> Select
+                </li>
+<li class="flex items-center gap-stack-base px-margin py-stack-base text-on-surface-variant hover:bg-surface-container-high transition-all font-body-sm text-body-sm cursor-pointer scale-95 active:scale-90">
+<span class="material-symbols-outlined">analytics</span> Profile
+                </li>
+<li class="flex items-center gap-stack-base px-margin py-stack-base text-on-surface-variant hover:bg-surface-container-high transition-all font-body-sm text-body-sm cursor-pointer scale-95 active:scale-90">
+<span class="material-symbols-outlined">psychology</span> Strategy
+                </li>
+<li class="flex items-center gap-stack-base px-margin py-stack-base text-on-surface-variant hover:bg-surface-container-high transition-all font-body-sm text-body-sm cursor-pointer scale-95 active:scale-90">
+<span class="material-symbols-outlined">account_tree</span> Pipeline
+                </li>
+</ul>
+</nav>
+<!-- Main Content -->
+<main class="flex-1 lg:ml-64 p-margin flex justify-center overflow-y-auto">
+<div class="w-full max-w-[900px] flex flex-col gap-margin">
+<!-- Dropzone (Normal State Example - Hidden but present for reference) -->
+<!-- 
+                <div class="w-full max-w-[480px] h-[220px] mx-auto border border-dashed border-outline-variant bg-surface-container-low flex flex-col items-center justify-center gap-stack-base rounded cursor-pointer hover:border-primary transition-colors">
+                    <span class="material-symbols-outlined text-[32px] text-outline">upload_file</span>
+                    <div class="font-headline-sm text-headline-sm text-on-surface">Drop a CSV file here</div>
+                    <div class="font-body-md text-primary">or choose a file</div>
+                    <div class="font-data-sm text-data-sm text-on-surface-variant mt-stack-base">CSV only, max 50MB, max 1000 columns</div>
+                </div> 
+                -->
+<!-- Dropzone (Error State) -->
+<div class="w-full max-w-[480px] mx-auto">
+<div class="w-full h-[220px] border border-error bg-surface-container-low flex flex-col items-center justify-center gap-stack-base rounded cursor-pointer">
+<span class="material-symbols-outlined text-[32px] text-error">upload_file</span>
+<div class="font-headline-sm text-headline-sm text-on-surface">Drop a CSV file here</div>
+<div class="font-body-md text-primary hover:underline">or choose a file</div>
+<div class="font-data-sm text-data-sm text-on-surface-variant mt-stack-base">CSV only, max 50MB, max 1000 columns</div>
+</div>
+<!-- Error Panel -->
+<div class="mt-stack-base p-stack-base bg-error-container border border-error rounded flex items-start gap-stack-base">
+<span class="material-symbols-outlined text-on-error-container text-[20px] mt-1">error</span>
+<div class="font-data-sm text-data-sm text-on-error-container">
+<span class="font-bold">DUPLICATE_COLUMNS</span> - The file contains duplicate column names: <span class="bg-surface-variant px-1 rounded">customer_id</span> appears twice. Please rename the columns and upload again.
+                        </div>
+</div>
+</div>
+<!-- Divider -->
+<div class="flex items-center gap-gutter w-full max-w-[480px] mx-auto my-gutter">
+<div class="flex-1 h-[1px] bg-outline-variant"></div>
+<div class="font-label-caps text-label-caps text-outline">OR</div>
+<div class="flex-1 h-[1px] bg-outline-variant"></div>
+</div>
+<!-- Sample Datasets -->
+<div class="w-full max-w-[900px] mx-auto">
+<h2 class="font-headline-sm text-headline-sm mb-gutter text-on-surface">Sample Datasets</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<div class="border border-outline-variant bg-surface rounded p-gutter flex flex-col gap-stack-base">
+<div class="font-data-md text-data-md font-semibold text-on-surface truncate">telco_churn.csv</div>
+<div class="font-data-sm text-data-sm text-on-surface-variant flex-1">
+                                7,043 rows x 21 columns<br/>
+                                binary classification
+                            </div>
+<button class="w-full bg-surface text-on-surface border border-outline-variant px-[8px] py-[4px] rounded font-label-caps text-label-caps hover:bg-surface-container transition-colors">
+                                LOAD
+                            </button>
+</div>
+<!-- Card 2 -->
+<div class="border border-outline-variant bg-surface rounded p-gutter flex flex-col gap-stack-base">
+<div class="font-data-md text-data-md font-semibold text-on-surface truncate">house_prices.csv</div>
+<div class="font-data-sm text-data-sm text-on-surface-variant flex-1">
+                                1,460 rows x 81 columns<br/>
+                                regression
+                            </div>
+<button class="w-full bg-surface text-on-surface border border-outline-variant px-[8px] py-[4px] rounded font-label-caps text-label-caps hover:bg-surface-container transition-colors">
+                                LOAD
+                            </button>
+</div>
+<!-- Card 3 -->
+<div class="border border-outline-variant bg-surface rounded p-gutter flex flex-col gap-stack-base">
+<div class="font-data-md text-data-md font-semibold text-on-surface truncate">credit_fraud.csv</div>
+<div class="font-data-sm text-data-sm text-on-surface-variant flex-1">
+                                20,000 rows x 31 columns<br/>
+                                severe imbalance
+                            </div>
+<button class="w-full bg-surface text-on-surface border border-outline-variant px-[8px] py-[4px] rounded font-label-caps text-label-caps hover:bg-surface-container transition-colors">
+                                LOAD
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
