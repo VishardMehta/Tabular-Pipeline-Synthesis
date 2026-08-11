@@ -394,3 +394,46 @@ ANALYSIS_SUMMARY_MAX_CHARS = 2000
 # three items that actually mattered. Bounds the list length, not the length of
 # each entry.
 RISKS_MAX_ITEMS = 8
+
+# ---------------------------------------------------------------------------
+# Task inference
+# ---------------------------------------------------------------------------
+#
+# Added in stage 2, not in the original 21. task_confidence is a required
+# ProfileCard field with no formula specified anywhere in the plan or in this
+# file, and CLAUDE.md's rule against magic numbers outside this file applies to
+# it exactly as it does to every threshold above. These two constants are the
+# alternative to a bare 0.95 sitting in profiler.py with no name. Flagged for
+# review rather than assumed approved, the same way MAX_MEMORY_MB was proposed
+# before it was used.
+#
+# The mapping from a target's inferred type to a problem type is deterministic
+# once the dtype ladder has run: BOOLEAN and CATEGORICAL targets are
+# classification, NUMERIC_CONTINUOUS is regression, and none of those three
+# leave the choice in doubt. NUMERIC_DISCRETE does leave it in doubt - a target
+# with 6 distinct integer values could be star ratings (classification) or a
+# small count (regression, e.g. Poisson-shaped), and nothing in the profile
+# distinguishes the two cases. Splitting the confidence in two lets the
+# frontend signal that doubt honestly rather than reporting false precision.
+
+# Confidence assigned when the target's inferred type maps to a problem type
+# with no ambiguity: BOOLEAN and CATEGORICAL to classification,
+# NUMERIC_CONTINUOUS to regression.
+#
+# Not 1.0. The dtype ladder itself is a heuristic (PARSE_RATE tolerates up to
+# 10% mismatch, ID_UNIQUENESS tolerates duplicate keys), so the type call it
+# produced is not certain even when the type-to-problem mapping downstream of
+# it is. 0.95 reflects confidence in the mapping while leaving room for the
+# type call underneath it to be wrong.
+TASK_CONFIDENCE_TYPE_MATCH = 0.95
+
+# Confidence assigned when the target is NUMERIC_DISCRETE: classification or
+# regression is a genuine judgment call, not a fact the profiler can settle.
+#
+# 0.65 is deliberately in the region a frontend would render as "verify this"
+# rather than "trust this". Lower (0.4) reads as a coin flip, which
+# understates the real signal - low unique_count on a numeric column does lean
+# toward classification, most numeric columns with 20 or fewer values in
+# practice are rating scales or small categories, not counts. Higher (0.8)
+# undersells how often this guess is wrong.
+TASK_CONFIDENCE_DISCRETE_AMBIGUOUS = 0.65

@@ -79,8 +79,25 @@ def test_rejection_message_names_the_offending_columns(client):
     assert "id" in response.json()["error"]["message"]
 
 
+PROFILABLE_CSV = (
+    b"id,plan,tenure,churn\n"
+    + b"".join(
+        f"{i},{'gold' if i % 3 else 'silver'},{i % 24},{'yes' if i % 4 == 0 else 'no'}\n".encode()
+        for i in range(1, 61)
+    )
+)
+
+
+def upload(client, payload: bytes = PROFILABLE_CSV, filename: str = "churn.csv") -> str:
+    response = client.post(
+        "/api/datasets", files={"file": (filename, io.BytesIO(payload), "text/csv")}
+    )
+    return response.json()["dataset_id"]
+
+
 def test_profile_echoes_target(client):
-    response = client.post("/api/datasets/abc/profile", json={"target_column": "churn"})
+    dataset_id = upload(client)
+    response = client.post(f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"})
     assert response.status_code == 200
     profile = response.json()["profile"]
     assert profile["target_column"] == "churn"
@@ -88,9 +105,21 @@ def test_profile_echoes_target(client):
 
 
 def test_profile_rejects_missing_target(client):
-    response = client.post("/api/datasets/abc/profile", json={})
+    dataset_id = upload(client)
+    response = client.post(f"/api/datasets/{dataset_id}/profile", json={})
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "INVALID_REQUEST"
+
+
+def test_profile_on_unknown_dataset_id_returns_dataset_expired(client):
+    """No DATASET_NOT_FOUND exists. An id that was never uploaded gets the
+    same code as one that expired - see errors.py for why that is a decision."""
+    response = client.post(
+        "/api/datasets/00000000-0000-4000-8000-000000000000/profile",
+        json={"target_column": "churn"},
+    )
+    assert response.status_code == 410
+    assert response.json()["error"]["code"] == "DATASET_EXPIRED"
 
 
 def test_generate_returns_result_and_validation(client):
@@ -134,7 +163,8 @@ def test_gen_result_cannot_hold_a_metric_value():
 
 def test_profile_carries_no_raw_values_outside_sample_values(client):
     """Only low-cardinality categoricals may expose level names."""
-    response = client.post("/api/datasets/abc/profile", json={"target_column": "churn"})
+    dataset_id = upload(client)
+    response = client.post(f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"})
     for column in response.json()["profile"]["columns"]:
         values = column["sample_values"]
         if values is None:
@@ -147,8 +177,9 @@ def test_profile_carries_no_raw_values_outside_sample_values(client):
 
 def test_profile_reports_secondary_metrics(client):
     """A primary metric shown alone cannot be checked for whether it flatters."""
+    dataset_id = upload(client)
     profile = client.post(
-        "/api/datasets/abc/profile", json={"target_column": "churn"}
+        f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"}
     ).json()["profile"]
     assert profile["secondary_metrics"]
     assert profile["primary_metric"] not in profile["secondary_metrics"]

@@ -138,15 +138,8 @@ def test_accepted_upload_is_stored_under_a_uuid_not_the_users_filename(tmp_path)
 # --- Stage 2 trap, guarded before it can be sprung --------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Stage 2: unique_count does not subsample. When profiled_on_sample is "
-    "true, cardinality must still be computed on the full column, or "
-    "HIGH_CARD_REL over-flags and HIGH_CARD_ABS under-flags. Documented in "
-    "heuristics.md with nothing enforcing it. Replace this with a real "
-    "assertion against the profiler when it exists.",
-)
-def test_cardinality_is_computed_on_the_full_column_when_sampling():
-    from app import profiler  # noqa: F401  - does not exist until stage 2
-
-    raise AssertionError("profiler does not exist yet")
+# The cardinality-vs-sampling trap this file used to guard with an xfail is
+# resolved architecturally, not just fixed: profiler.py never computes
+# unique_count from anything but the full column, at any file size. See
+# test_cardinality_is_never_computed_from_a_sample in test_profiler.py for the
+# real assertion.

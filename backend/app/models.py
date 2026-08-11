@@ -248,8 +248,14 @@ class ProfileCard(BaseModel):
 
     duplicate_row_count: int = 0
 
-    # Honest reporting of whether the numbers above are exact. Set when
-    # n_rows exceeds SAMPLE_THRESHOLD.
+    # Narrower than it sounds. Every column statistic in this ProfileCard -
+    # cardinality, missingness, numeric summaries, flags - is always computed
+    # on the full file; none of it subsamples. This field is true only when
+    # n_rows exceeds SAMPLE_THRESHOLD and the leakage association
+    # (target_association on each ColumnProfile) was computed on a shared
+    # random sample of sample_rows rows instead of the full column, because
+    # that correlation pass is the one O(n*m) step in profiling. See the
+    # architectural note at the top of profiler.py.
     profiled_on_sample: bool = False
     sample_rows: int | None = None
 

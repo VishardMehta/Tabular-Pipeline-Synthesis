@@ -1,19 +1,20 @@
 """Dataset routes.
 
-Stage 0: every handler returns fixtures. There is no storage, no parsing and no
-LLM call behind any of these. The point of the stage is that the response shapes
-are final, so stage 1 onward replaces the body of each handler without touching
-its signature or the frontend.
+Upload and profile are real as of stage 2. Generate still returns fixtures;
+stage 3 replaces it with the Gemini call.
 """
 
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from typing import Annotated
 
+import pandas as pd
 from fastapi import APIRouter, File, UploadFile
 
-from app import fixtures, ingest, storage
+from app import fixtures, ingest, profiler, storage
+from app.errors import AppError, ErrorCode
 from app.models import (
     DatasetUploadResponse,
     GenerateRequest,
@@ -47,17 +48,39 @@ async def create_dataset(file: Annotated[UploadFile, File()]) -> DatasetUploadRe
     )
 
 
+def _load_stored_frame(dataset_id: str) -> tuple[str, pd.DataFrame]:
+    """Look up a dataset row and re-parse its file.
+
+    There is no DATASET_NOT_FOUND. An unknown id and an expired id both raise
+    DATASET_EXPIRED - see the comment on that code in errors.py for why that
+    is a decision, not an oversight. Re-parsing with the C engine rather than
+    caching the frame keeps this consistent with the same guarantee ingest.py
+    depends on: whatever reads a file, reads it the same way every time.
+    """
+    row = storage.get_dataset(dataset_id)
+    if row is None:
+        raise AppError(
+            ErrorCode.DATASET_EXPIRED,
+            "This dataset is no longer available. Upload the file again.",
+            {"dataset_id": dataset_id},
+        )
+    frame = ingest.parse_csv(Path(row["stored_path"]))
+    return row["filename"], frame
+
+
 @router.post("/{dataset_id}/profile", response_model=ProfileResponse)
 async def profile_dataset(dataset_id: str, request: ProfileRequest) -> ProfileResponse:
     """Profile a dataset against the chosen target column.
 
-    Stage 2 replaces this with the real profiler. `dataset_id` is accepted and
-    ignored here so the frontend can be built against the final URL shape.
+    TARGET_NOT_FOUND, TARGET_ALL_NULL, TARGET_SINGLE_VALUE and
+    TARGET_TYPE_UNSUPPORTED all originate inside profiler.profile and are
+    rendered by the same AppError handler as every ingest rejection.
     """
-    return ProfileResponse(
-        state=JobState.COMPLETE,
-        profile=fixtures.profile_card(request.target_column),
+    filename, frame = await asyncio.to_thread(_load_stored_frame, dataset_id)
+    card = await asyncio.to_thread(
+        profiler.profile, frame, dataset_id, filename, request.target_column
     )
+    return ProfileResponse(state=JobState.COMPLETE, profile=card)
 
 
 @router.post("/{dataset_id}/generate", response_model=GenerateResponse)

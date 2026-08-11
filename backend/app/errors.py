@@ -45,6 +45,13 @@ class ErrorCode(StrEnum):
     TARGET_NOT_FOUND = "TARGET_NOT_FOUND"
     TARGET_ALL_NULL = "TARGET_ALL_NULL"
     TARGET_SINGLE_VALUE = "TARGET_SINGLE_VALUE"
+    # Added in stage 2. The dtype ladder classifies a target as TEXT, DATETIME
+    # or UNKNOWN for columns this system has no way to model: free text, a raw
+    # timestamp, or a column with no non-null values that survived selection.
+    # There is no ProblemType member for any of those, and fabricating a
+    # confidence-weighted guess would be exactly the kind of invented number
+    # this project exists to avoid. Refusing cleanly is the honest option.
+    TARGET_TYPE_UNSUPPORTED = "TARGET_TYPE_UNSUPPORTED"
 
     # Lifecycle
     DATASET_EXPIRED = "DATASET_EXPIRED"
@@ -89,6 +96,7 @@ ERROR_SPECS: dict[ErrorCode, ErrorSpec] = {
     ErrorCode.TARGET_NOT_FOUND: ErrorSpec(422, False),
     ErrorCode.TARGET_ALL_NULL: ErrorSpec(422, False),
     ErrorCode.TARGET_SINGLE_VALUE: ErrorSpec(422, False),
+    ErrorCode.TARGET_TYPE_UNSUPPORTED: ErrorSpec(422, False),
     # 410 rather than 404. The dataset existed and was deleted on TTL, and
     # saying so tells the user to re-upload rather than to check the URL.
     #
