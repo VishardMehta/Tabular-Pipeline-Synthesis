@@ -308,21 +308,22 @@ SIMILARITY_CUTOFF = 0.85
 # Metric selection bands
 # ---------------------------------------------------------------------------
 #
-# Applied to r_bal, the class balance ratio, to choose the primary metric:
+# Applied to class_balance_ratio (n_majority / n_minority) to choose the
+# primary metric:
 #
-#   r_bal <= BALANCE_ACCURACY_MAX          -> accuracy
-#   BALANCE_ACCURACY_MAX < r_bal <= BALANCE_F1_MAX -> F1
-#   r_bal > BALANCE_F1_MAX                 -> PR-AUC
+#   class_balance_ratio <= BALANCE_ACCURACY_MAX          -> accuracy
+#   BALANCE_ACCURACY_MAX < class_balance_ratio <= BALANCE_F1_MAX -> F1
+#   class_balance_ratio > BALANCE_F1_MAX                 -> PR-AUC
 #
-# The bands are only meaningful once r_bal is defined, and the binary
-# definition (n_majority / n_minority) does not transfer to multiclass: a
-# fifteen-class dataset that is entirely reasonable to model can show a 12:1
+# The bands are only meaningful once class_balance_ratio is defined, and the
+# binary definition (n_majority / n_minority) does not transfer to multiclass:
+# a fifteen-class dataset that is entirely reasonable to model can show a 12:1
 # spread between its largest and smallest class, which would route it to PR-AUC,
 # a metric that is not even well defined for multiclass without an averaging
 # choice. metrics.py must therefore branch on problem type before applying
 # these, and use macro-F1 for multiclass rather than reading the upper band.
 
-# Upper bound on r_bal for accuracy to remain an honest metric.
+# Upper bound on class_balance_ratio for accuracy to remain an honest metric.
 #
 # 1.5 is a 60/40 split. The majority-class baseline is 60%, a real model clears
 # it visibly, and accuracy still means what a user assumes it means.
@@ -332,7 +333,8 @@ SIMILARITY_CUTOFF = 0.85
 # since the two agree closely at that point anyway.
 BALANCE_ACCURACY_MAX = 1.5
 
-# Upper bound on r_bal for F1 to remain the better choice over PR-AUC.
+# Upper bound on class_balance_ratio for F1 to remain the better choice over
+# PR-AUC.
 #
 # 10 is roughly a 9% minority class. Below it F1 at a sensible threshold is
 # informative and far easier to explain. Above it F1 becomes acutely sensitive

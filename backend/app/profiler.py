@@ -272,8 +272,8 @@ def profile(
         target_result.inferred_type, target_unique_count
     )
 
-    r_bal = metrics.class_balance_ratio(target_basis, problem_type)
-    primary_metric, secondary_metrics = metrics.select_metrics(problem_type, r_bal)
+    class_balance_ratio = metrics.class_balance_ratio(target_basis, problem_type)
+    primary_metric, secondary_metrics = metrics.select_metrics(problem_type, class_balance_ratio)
 
     # The one and only sample-bounded step. A single shared sample of row
     # labels, drawn once, reused for every column's leakage test - not a fresh
@@ -314,7 +314,7 @@ def profile(
         task_confidence=task_confidence,
         primary_metric=primary_metric,
         secondary_metrics=secondary_metrics,
-        class_balance_ratio=r_bal,
+        class_balance_ratio=class_balance_ratio,
         duplicate_row_count=int(frame.duplicated().sum()),
         profiled_on_sample=profiled_on_sample,
         sample_rows=sample_rows,

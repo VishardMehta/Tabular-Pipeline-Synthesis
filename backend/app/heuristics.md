@@ -50,23 +50,32 @@ when `profiled_on_sample` is true.
 
 ## Metric selection
 
-`r_bal` is the class balance ratio. Its definition is problem-type-dependent and
-that is deliberate, because the binary definition does not transfer.
+`class_balance_ratio` is the class balance ratio. Its definition is
+problem-type-dependent and that is deliberate, because the binary definition
+does not transfer.
 
-**Binary classification.** `r_bal = n_majority / n_minority`. The bands apply
-directly:
+**Binary classification.** `class_balance_ratio = n_majority / n_minority`.
+The bands apply directly:
 
 | Condition | Primary |
 |---|---|
-| `r_bal <= BALANCE_ACCURACY_MAX` | `accuracy` |
-| `BALANCE_ACCURACY_MAX < r_bal <= BALANCE_F1_MAX` | `f1` |
-| `r_bal > BALANCE_F1_MAX` | `pr_auc` |
+| `class_balance_ratio <= BALANCE_ACCURACY_MAX` | `accuracy` |
+| `BALANCE_ACCURACY_MAX < class_balance_ratio <= BALANCE_F1_MAX` | `f1` |
+| `class_balance_ratio > BALANCE_F1_MAX` | `pr_auc` |
 
 **Multiclass classification.** The primary is `f1_macro` regardless of ratio.
 The bands are not read. A fifteen-class dataset that is entirely reasonable to
 model can show a 12:1 spread between its largest and smallest class, which would
 route it to `pr_auc` under the binary rule, and `pr_auc` is not well defined for
 multiclass without an averaging choice that nobody asked for.
+
+An alternative definition, `(1 / n_classes) / min_class_proportion`, was
+proposed and rejected during stage 2. It was meant to generalise past binary
+without leaning on "majority" and "minority" - but multiclass never reads this
+value against the bands at all, so there was nothing left to generalise for.
+The two formulas also disagree numerically at every imbalance away from an
+even split (9.0 versus 5.0 at a 90/10 split), and `n_majority / n_minority` is
+what `BALANCE_ACCURACY_MAX` and `BALANCE_F1_MAX` were calibrated against.
 
 **Regression.** The primary is `rmse`, always. No bands, no branch. See the
 comment on `TARGET_SKEW_THRESHOLD` for why the metric does not switch to `mae`

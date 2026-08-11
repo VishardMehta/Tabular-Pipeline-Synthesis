@@ -45,7 +45,7 @@ def class_balance_ratio(y: pd.Series, problem_type: ProblemType) -> float | None
 
 
 def select_metrics(
-    problem_type: ProblemType, r_bal: float | None
+    problem_type: ProblemType, class_balance_ratio: float | None
 ) -> tuple[Metric, list[Metric]]:
     """Primary and secondary metrics, per the tables in heuristics.md.
 
@@ -54,13 +54,14 @@ def select_metrics(
     switch to MAE on a heavy-tailed target.
 
     Multiclass: f1_macro always primary, accuracy secondary. The bands on
-    r_bal are not read - a fifteen-class dataset can show a wide spread
-    between its largest and smallest class while being entirely reasonable to
-    model, and pr_auc has no agreed definition for multiclass.
+    class_balance_ratio are not read - a fifteen-class dataset can show a wide
+    spread between its largest and smallest class while being entirely
+    reasonable to model, and pr_auc has no agreed definition for multiclass.
 
-    Binary: r_bal against the three bands chooses the primary. The two bands
-    not chosen become secondaries, plus roc_auc, which no band ever selects
-    because it stays flattering under imbalance while precision collapses.
+    Binary: class_balance_ratio against the three bands chooses the primary.
+    The two bands not chosen become secondaries, plus roc_auc, which no band
+    ever selects because it stays flattering under imbalance while precision
+    collapses.
 
     Every path returns secondaries. Suppressing the alternatives is the
     black-box behaviour this tool argues against - a primary metric shown
@@ -74,12 +75,12 @@ def select_metrics(
 
     # Binary. TARGET_SINGLE_VALUE is raised before this is reachable, so a
     # binary target always has an observed ratio here.
-    if r_bal is None:
+    if class_balance_ratio is None:
         raise ValueError("binary target must have a class balance ratio")
 
-    if r_bal <= heuristics.BALANCE_ACCURACY_MAX:
+    if class_balance_ratio <= heuristics.BALANCE_ACCURACY_MAX:
         primary = Metric.ACCURACY
-    elif r_bal <= heuristics.BALANCE_F1_MAX:
+    elif class_balance_ratio <= heuristics.BALANCE_F1_MAX:
         primary = Metric.F1
     else:
         primary = Metric.PR_AUC
