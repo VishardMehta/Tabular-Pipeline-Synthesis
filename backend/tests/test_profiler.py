@@ -15,7 +15,7 @@ import pytest
 
 from app import heuristics, profiler
 from app.errors import AppError, ErrorCode
-from app.models import ColumnFlag, InferredType, Metric, ProblemType
+from app.models import AssociationMethod, ColumnFlag, InferredType, Metric, ProblemType
 
 FIXTURES = Path(__file__).parent / "fixtures" / "profiler"
 
@@ -266,6 +266,62 @@ def test_leakage_association_is_never_negative_or_above_one():
         for col in card.columns:
             if col.target_association is not None:
                 assert 0.0 <= col.target_association <= 1.0, (fixture.name, col.name)
+
+
+# --- association_method: which formula produced target_association ----------
+
+
+def test_association_method_is_none_exactly_when_association_is_none():
+    """The invariant documented on ColumnProfile.association_method, checked
+    across every fixture rather than trusted from reading the code."""
+    for fixture in FIXTURES.glob("*.csv"):
+        df = pd.read_csv(fixture, engine="c")
+        target_col = "target" if "target" in df.columns else df.columns[-1]
+        try:
+            card = profiler.profile(df, "id", fixture.name, target_col)
+        except AppError:
+            continue
+        for col in card.columns:
+            is_none = col.association_method is AssociationMethod.NONE
+            assert is_none == (col.target_association is None), (fixture.name, col.name)
+
+
+def test_association_method_matches_the_feature_target_pairing():
+    """Numeric feature, regression target -> spearman. Numeric feature,
+    classification target -> eta. Categorical feature, any target -> purity
+    for classification, eta for regression, per the dispatch in profiler.py."""
+    binary = profiler.profile(load("leaking_feature.csv"), "id", "f", "target")
+    numeric_vs_binary = column(binary, "feature")
+    assert numeric_vs_binary.association_method is AssociationMethod.ETA
+
+    regression = profiler.profile(load("skewed_regression.csv"), "id", "f", "target")
+    numeric_vs_regression = column(regression, "feature")
+    assert numeric_vs_regression.association_method is AssociationMethod.SPEARMAN
+
+    categorical_vs_binary = column(
+        profiler.profile(load("high_cardinality_categorical.csv"), "id", "f", "target"),
+        "category",
+    )
+    assert categorical_vs_binary.association_method is AssociationMethod.PURITY
+
+    df = load("quasi_constant_995.csv").rename(
+        columns={"target": "old_target", "feature": "target", "mostly_same": "category"}
+    )
+    categorical_vs_regression = column(
+        profiler.profile(df, "id", "f", "target"), "category"
+    )
+    assert categorical_vs_regression.association_method is AssociationMethod.ETA
+
+
+def test_association_method_is_none_for_text_and_target_columns():
+    card = profiler.profile(load("id_column.csv"), "id", "f", "target")
+    row_id = column(card, "row_id")
+    assert row_id.inferred_type is InferredType.TEXT
+    assert row_id.association_method is AssociationMethod.NONE
+    assert row_id.target_association is None
+
+    target_profile = column(card, "target")
+    assert target_profile.association_method is AssociationMethod.NONE
 
 
 # --- Sampling: the architectural rule, not just the old xfail's trap --------

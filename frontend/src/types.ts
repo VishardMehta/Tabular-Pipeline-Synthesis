@@ -47,6 +47,12 @@ export type ColumnFlag =
   | "numeric_as_string"
   | "potential_leakage";
 
+/** Which statistic target_association measures. "none" pairs with a null
+ * target_association: either no test applies (text/datetime/unknown feature,
+ * or the target column itself) or too little paired data survived to
+ * compute one. */
+export type AssociationMethod = "spearman" | "eta" | "purity" | "none";
+
 export type ValidationSeverity = "error" | "warning" | "info";
 
 export type JobState =
@@ -77,6 +83,8 @@ export interface ColumnProfile {
   median: number | null;
   parse_rate: number | null;
   target_association: number | null;
+  /** Never a linear correlation. See AssociationMethod. */
+  association_method: AssociationMethod;
   flags: ColumnFlag[];
 }
 

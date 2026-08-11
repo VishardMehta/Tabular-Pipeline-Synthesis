@@ -32,6 +32,17 @@ docs/spike-01-gemini-structured-output.md.
 Strategy fields must precede `code` so the model plans before it writes.
 Do not reorder.
 
+## Prompt authoring: say Y, never write "never X" alone
+A bare prohibition in a system prompt is weaker than telling the model what to
+say instead. Found in stage 3: instructing the model not to call
+`target_association` a "linear" correlation stopped it on some datasets but not
+others. Giving it the actual vocabulary to use ("call it an association";
+naming what it is per column via `association_method`) fixed every case,
+confirmed by rerunning the same fixture that still failed under the
+prohibition-only version. Applies again in stage 4 when writing the
+validator's failure messages: tell the model what a passing version looks
+like, not only what a failing one does.
+
 ## Testing
 Profiler and validator changes require a fixture. Never assert on exact LLM
 prose; assert structural invariants only.

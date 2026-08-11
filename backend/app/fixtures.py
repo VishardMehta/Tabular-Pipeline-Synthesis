@@ -16,6 +16,7 @@ Delete this module in stage 1. Nothing outside app/api should import it.
 from __future__ import annotations
 
 from app.models import (
+    AssociationMethod,
     CandidateModel,
     ColumnFlag,
     ColumnProfile,
@@ -119,6 +120,7 @@ def _column_profiles() -> list[ColumnProfile]:
             std=24.559,
             median=29.0,
             target_association=0.352,
+            association_method=AssociationMethod.ETA,
         ),
         ColumnProfile(
             name="contract_type",
@@ -131,6 +133,7 @@ def _column_profiles() -> list[ColumnProfile]:
             top_value_pct=0.550,
             sample_values=["Month-to-month", "One year", "Two year"],
             target_association=0.397,
+            association_method=AssociationMethod.PURITY,
         ),
         ColumnProfile(
             name="monthly_charges",
@@ -146,6 +149,7 @@ def _column_profiles() -> list[ColumnProfile]:
             std=30.090,
             median=70.35,
             target_association=0.193,
+            association_method=AssociationMethod.ETA,
         ),
         ColumnProfile(
             name="total_charges",
@@ -162,6 +166,7 @@ def _column_profiles() -> list[ColumnProfile]:
             std=2266.771,
             median=1397.475,
             target_association=0.199,
+            association_method=AssociationMethod.ETA,
             flags=[ColumnFlag.NUMERIC_AS_STRING],
         ),
         ColumnProfile(
@@ -189,6 +194,7 @@ def _column_profiles() -> list[ColumnProfile]:
             std=1.284,
             median=0.0,
             target_association=0.271,
+            association_method=AssociationMethod.ETA,
         ),
         ColumnProfile(
             name="internal_notes",
@@ -217,6 +223,7 @@ def _column_profiles() -> list[ColumnProfile]:
                 "Other",
             ],
             target_association=0.994,
+            association_method=AssociationMethod.PURITY,
             flags=[ColumnFlag.HIGH_MISSING, ColumnFlag.POTENTIAL_LEAKAGE],
         ),
         ColumnProfile(

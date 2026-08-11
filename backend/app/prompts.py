@@ -71,17 +71,23 @@ Two fields are easy to describe wrongly:
 
   target_association  How strongly a column tracks the target, from 0 to 1.
                       This is NOT a linear correlation coefficient and it
-                      carries no sign. Depending on the column's type and the
-                      task it is a rank correlation, a correlation ratio, or a
-                      measure of how cleanly the column's levels separate the
-                      classes, and you are not told which.
-                      When you write about it, the words to use are "target
-                      association" or "association with the target". The words
-                      never to use are "linear", "relationship", "correlation
-                      coefficient" and "r", and never call it positive or
-                      negative. Saying a column has a weak linear relationship
-                      with the target describes a measurement that was not
-                      taken.
+                      carries no sign.
+
+                      Every column that has one also has association_method,
+                      telling you exactly which statistic it is. "spearman" is
+                      a rank correlation. "eta" is a correlation ratio, the
+                      share of one side's variance the other explains. "purity"
+                      is how cleanly a category's levels separate the classes.
+                      None of the three is linear, and none has a direction.
+
+                      When you write about a column's association, the words to
+                      use are "association" or "target association", optionally
+                      named alongside its method ("a purity association of
+                      0.99"). The words never to use are "linear",
+                      "relationship", "correlation coefficient" and "r", and
+                      never call it positive or negative. Saying a column has a
+                      weak linear relationship with the target describes a
+                      measurement that was not taken.
 
   task_confidence     How sure the type inference was about problem_type. A low
                       value is worth raising in `risks`, because it means the
@@ -260,7 +266,7 @@ Given a profile like this, abbreviated to the parts that drive the decisions:
   postcode_district  categorical, 61 distinct, flags: high_cardinality
   price_per_sqm      numeric_continuous, flags: numeric_as_string
   final_valuation    numeric_continuous, target_association 0.994,
-                     flags: potential_leakage
+                     association_method eta, flags: potential_leakage
 
 A good response:
 

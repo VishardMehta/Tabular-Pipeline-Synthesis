@@ -121,6 +121,21 @@ class ColumnFlag(StrEnum):
     POTENTIAL_LEAKAGE = "potential_leakage"
 
 
+# Which formula backs a column's target_association. See leakage.py for what
+# each one actually computes; this enum exists only to name which one ran, not
+# to explain it. NONE covers both "not attempted" (a TEXT, DATETIME or UNKNOWN
+# feature, or the target column itself) and "attempted but no value resulted"
+# (too little paired data to compute anything) - both leave
+# target_association at None, and this stays paired with it.
+class AssociationMethod(StrEnum):
+    """Which statistic target_association measures for this column."""
+
+    SPEARMAN = "spearman"
+    ETA = "eta"
+    PURITY = "purity"
+    NONE = "none"
+
+
 # ERROR means the generated code is unsafe or provably broken and must be
 # surfaced as a failure. WARNING means it is likely wrong but runnable. INFO is
 # an observation that does not undermine the pipeline.
@@ -198,18 +213,29 @@ class ColumnProfile(BaseModel):
     # when the datetime rung of the ladder was reached. Backs PARSE_RATE.
     parse_rate: float | None = Field(default=None, ge=0.0, le=1.0)
 
-    # Strength of association with the target, on a sample, as an absolute
-    # value in 0.0-1.0 so both directions register. Backs POTENTIAL_LEAKAGE.
-    # None for the target column itself and when the target is unknown.
+    # Strength of association with the target, as an absolute value in 0.0-1.0
+    # so both directions register. Backs POTENTIAL_LEAKAGE. None for the target
+    # column itself and when the feature's type rules out a meaningful test
+    # (TEXT, DATETIME, UNKNOWN).
     #
-    # The statistic behind this number is per task type, and stage 2 must
-    # branch rather than reach for one correlation everywhere. Spearman or
-    # Pearson against a regression target. Point-biserial for a numeric feature
-    # against a binary target. A level-to-class purity measure for a
-    # categorical feature against any classification target, because rank
-    # correlation presumes an ordered target and nominal class labels have no
-    # order, which makes Spearman meaningless on multiclass.
+    # The statistic behind this number is per task type; see leakage.py. Which
+    # one was used for THIS column is association_method below, not left for
+    # the reader to infer from inferred_type and problem_type.
     target_association: float | None = Field(default=None, ge=0.0, le=1.0)
+
+    # Which formula target_association is. Populated by the profiler, not
+    # inferred by whoever reads this card - the profiler already knows which
+    # branch it took, and re-deriving that from inferred_type and problem_type
+    # is work the model would otherwise have to redo, imperfectly, on every
+    # request. Always NONE exactly when target_association is None, checked in
+    # test_profiler.py.
+    #
+    # Added after a live run showed the model describing a purity score as "a
+    # weak linear association", which is a category error for all three
+    # statistics leakage.py computes, none of which is a linear correlation.
+    # Naming the method beside the number is a stronger fix than prohibiting
+    # the wrong word in the prompt, and prompts.py does both.
+    association_method: AssociationMethod = Field(default=AssociationMethod.NONE)
 
     flags: list[ColumnFlag] = Field(default_factory=list)
 
@@ -361,8 +387,10 @@ class GenResult(BaseModel):
         "applies them. Every retained column needing treatment should appear in a step."
     )
     candidate_models: list[CandidateModel] = Field(
+        min_length=2,
+        max_length=4,
         description="Two to four models worth trying on this dataset, strongest first. "
-        "The first one is what the code implements."
+        "The first one is what the code implements.",
     )
     validation_strategy: str = Field(
         description="How the pipeline is evaluated and why that scheme suits this "

@@ -26,7 +26,14 @@ import pandas as pd
 from app import heuristics, leakage, metrics
 from app.dtypes import DtypeResult, classify
 from app.errors import AppError, ErrorCode
-from app.models import ColumnFlag, ColumnProfile, InferredType, ProblemType, ProfileCard
+from app.models import (
+    AssociationMethod,
+    ColumnFlag,
+    ColumnProfile,
+    InferredType,
+    ProblemType,
+    ProfileCard,
+)
 
 # Any fixed seed keeps profiling deterministic across reruns of the same file,
 # which is the property that matters; the particular number carries no
@@ -105,18 +112,26 @@ def _leakage_association(
     problem_type: ProblemType,
     feature_values: pd.Series,
     target_values: pd.Series,
-) -> float | None:
+) -> tuple[float | None, AssociationMethod]:
+    """The association value and which formula produced it.
+
+    The method returned always matches which branch ran, but the caller
+    normalizes it back to NONE if the value comes back None - a formula that
+    was attempted but produced nothing (too little paired data) reports the
+    same as a formula that was never attempted, since either way there is no
+    number for the method name to describe.
+    """
     if feature_type in _NUMERIC_TYPES:
         if problem_type is ProblemType.REGRESSION:
-            return leakage.spearman(feature_values, target_values)
-        return leakage.correlation_ratio(feature_values, target_values)
+            return leakage.spearman(feature_values, target_values), AssociationMethod.SPEARMAN
+        return leakage.correlation_ratio(feature_values, target_values), AssociationMethod.ETA
     if feature_type in _CATEGORICAL_LIKE_TYPES:
         if problem_type is ProblemType.REGRESSION:
-            return leakage.correlation_ratio(target_values, feature_values)
-        return leakage.purity(feature_values, target_values)
+            return leakage.correlation_ratio(target_values, feature_values), AssociationMethod.ETA
+        return leakage.purity(feature_values, target_values), AssociationMethod.PURITY
     # TEXT, DATETIME, UNKNOWN: correlating raw text or timestamps is not
     # meaningful without feature engineering that has not happened yet.
-    return None
+    return None, AssociationMethod.NONE
 
 
 def _numeric_summary(values: pd.Series) -> dict[str, float | None]:
@@ -220,12 +235,17 @@ def _build_column_profile(
         sample_values = [str(v)[: heuristics.SAMPLE_VALUE_MAX_CHARS] for v in top_five]
 
     target_association: float | None = None
+    association_method = AssociationMethod.NONE
     if not is_target and problem_type is not None and target_for_leakage is not None:
         feature_for_leakage = basis.reindex(target_for_leakage.index)
-        target_association = _leakage_association(
+        target_association, association_method = _leakage_association(
             result.inferred_type, problem_type, feature_for_leakage, target_for_leakage
         )
-        if target_association is not None and target_association > heuristics.LEAKAGE_R:
+        if target_association is None:
+            # A formula was attempted (e.g. eta) but too little paired data
+            # survived dropna() to produce a value. No number, no method.
+            association_method = AssociationMethod.NONE
+        elif target_association > heuristics.LEAKAGE_R:
             flags.append(ColumnFlag.POTENTIAL_LEAKAGE)
 
     return ColumnProfile(
@@ -240,6 +260,7 @@ def _build_column_profile(
         sample_values=sample_values,
         parse_rate=result.parse_rate,
         target_association=target_association,
+        association_method=association_method,
         flags=flags,
         **numeric_summary,
     )
