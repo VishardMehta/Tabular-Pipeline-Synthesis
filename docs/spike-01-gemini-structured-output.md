@@ -51,6 +51,32 @@ Flash tier measured with the real `GenResult` schema, one call each:
 The plan's reasoning outlived its model name: Flash-Lite is still too weak for
 pipeline code, returning a one-line pipeline.
 
+> ### Superseded: the Flash-Lite row above is a measurement of the prompt, not the model
+>
+> The table was recorded during the stage-0 spike, **before `prompts.py`
+> existed**. The system prompt, the code constraints and the worked example
+> were authored later, in the stage 3a and 3b commits. Re-measured against the
+> current prompt, on the same three fixtures the cassettes use:
+>
+> | Fixture | Lines | Latency | Static checks |
+> |---|---|---|---|
+> | `leaking_feature.csv` | 39 | 5.6s | 12/12, 0 errors |
+> | `skewed_regression.csv` | 50 | 5.3s | 12/12, 0 errors |
+> | `high_cardinality_categorical.csv` | 41 | 4.6s | 12/12, 0 errors |
+>
+> Plus a 4,000-row telco churn set: 46 lines, 12/12, first attempt, no repair
+> round.
+>
+> So the one-line pipeline was a weak model **and** a bare schema with no
+> instruction text - not a ceiling on the model. With the real prompt,
+> Flash-Lite produces pipelines comparable in length to `gemini-3.6-flash` at
+> roughly a third of the latency. `gemini-3.1-flash-lite` is now the configured
+> default.
+>
+> The general lesson is worth more than the model choice: **a model comparison
+> run before the prompt exists measures the prompt's absence.** Re-run any such
+> table after the prompt stabilises.
+
 Avoid `gemini-flash-latest` despite the convenience. A floating alias means
 cassettes and prompt tuning drift underneath the project with no diff, which is
 the same failure mode the pandas pin exists to prevent.

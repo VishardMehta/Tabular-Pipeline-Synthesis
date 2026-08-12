@@ -23,6 +23,7 @@ something belongs to both, it goes here.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 
 from app import heuristics
 from app.models import ProfileCard
@@ -434,7 +435,9 @@ def _column_payload(profile: ProfileCard) -> list[dict]:
     ]
 
 
-def _select_columns(profile: ProfileCard) -> tuple[list[dict], int]:
+def _select_columns(
+    profile: ProfileCard, excluded_columns: Sequence[str] = ()
+) -> tuple[list[dict], int]:
     """Apply PROMPT_MAX_COLUMNS, keeping the columns that carry decisions.
 
     Returns the retained payload and the number omitted. Ordering within the
@@ -443,6 +446,9 @@ def _select_columns(profile: ProfileCard) -> tuple[list[dict], int]:
     not intend.
     """
     payload = _column_payload(profile)
+    if excluded_columns:
+        excluded = set(excluded_columns)
+        payload = [column for column in payload if column["name"] not in excluded]
     if len(payload) <= heuristics.PROMPT_MAX_COLUMNS:
         return payload, 0
 
@@ -474,14 +480,21 @@ def _select_columns(profile: ProfileCard) -> tuple[list[dict], int]:
     return retained, len(payload) - len(retained)
 
 
-def serialize_profile(profile: ProfileCard) -> str:
+def serialize_profile(profile: ProfileCard, excluded_columns: Sequence[str] = ()) -> str:
     """The ProfileCard as the model sees it.
 
     JSON rather than a prose table, because the field names here are the field
     names the model is about to produce, and a format that renames them adds a
     translation step for no benefit.
+
+    `excluded_columns` are dropped from the payload before PROMPT_MAX_COLUMNS
+    is applied, so excluding a column makes room for another rather than
+    wasting a slot. With no exclusions the output is byte-identical to what it
+    was before this parameter existed - held down by
+    test_empty_exclusion_matches_the_unfiltered_prompt, because the cassette
+    keys are a hash of this string.
     """
-    columns, omitted = _select_columns(profile)
+    columns, omitted = _select_columns(profile, excluded_columns)
     payload = {
         "filename": profile.filename,
         "n_rows": profile.n_rows,
@@ -498,10 +511,16 @@ def serialize_profile(profile: ProfileCard) -> str:
     }
     if omitted:
         payload["columns_omitted_from_this_prompt"] = omitted
+    if excluded_columns:
+        # Named rather than silently absent. The model needs to know these
+        # exist in the file so it can record them in dropped_columns with a
+        # truthful reason, instead of writing a pipeline that looks like it
+        # never saw them.
+        payload["columns_excluded_by_user"] = list(excluded_columns)
     return json.dumps(payload, indent=2, default=str)
 
 
-def build_user_message(profile: ProfileCard) -> str:
+def build_user_message(profile: ProfileCard, excluded_columns: Sequence[str] = ()) -> str:
     """The per-request half of the prompt.
 
     Deliberately thin. Everything that is true of every request belongs in
@@ -512,7 +531,7 @@ def build_user_message(profile: ProfileCard) -> str:
     parts = [
         "Here are the computed facts for one dataset.",
         "",
-        serialize_profile(profile),
+        serialize_profile(profile, excluded_columns),
     ]
 
     if profile.profiled_on_sample:
@@ -524,7 +543,16 @@ def build_user_message(profile: ProfileCard) -> str:
             "rather than exact.",
         ]
 
-    _, omitted = _select_columns(profile)
+    if excluded_columns:
+        parts += [
+            "",
+            "The user has excluded these columns from the pipeline: "
+            + ", ".join(excluded_columns)
+            + ". List each one in `dropped_columns` with the reason "
+            '"excluded by the user", and write code that never names them.',
+        ]
+
+    _, omitted = _select_columns(profile, excluded_columns)
     if omitted:
         parts += [
             "",

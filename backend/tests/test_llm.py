@@ -24,6 +24,7 @@ from google.genai import errors as genai_errors
 from pydantic import ValidationError
 
 from app import llm, profiler, storage
+from app.config import settings
 from app.errors import AppError, ErrorCode
 from app.llm import GeminiProvider, RawGeneration, StubProvider
 from app.models import GenResult
@@ -116,7 +117,18 @@ def test_only_real_columns_referenced(cassette_profile):
 
 
 def _provider() -> GeminiProvider:
-    return GeminiProvider(api_key="test-key", model="gemini-3.6-flash", timeout_s=1)
+    """Single-key provider: these tests are about error mapping, not rotation.
+
+    One key keeps each case a straight assertion that a given google-genai
+    exception becomes a given ErrorCode. With several keys a 429 would fail
+    over and the test would be asserting rotation instead.
+    """
+    return GeminiProvider(api_keys=["test-key"], model=settings.llm_model, timeout_s=1)
+
+
+def _provider_client(provider: GeminiProvider):
+    """The cached genai.Client the provider will use for its only key."""
+    return llm._KEY_RING.client(provider._api_keys[0])
 
 
 def test_gemini_provider_maps_429_to_rate_limited():
@@ -125,7 +137,7 @@ def test_gemini_provider_maps_429_to_rate_limited():
         429, {"message": "quota exceeded", "status": "RESOURCE_EXHAUSTED"}
     )
     with (
-        patch.object(provider._client.models, "generate_content", side_effect=error),
+        patch.object(_provider_client(provider).models, "generate_content", side_effect=error),
         pytest.raises(AppError) as exc_info,
     ):
         provider.generate(system_prompt="s", user_message="u")
@@ -137,7 +149,7 @@ def test_gemini_provider_maps_503_to_unavailable():
     provider = _provider()
     error = genai_errors.ServerError(503, {"message": "backend overloaded"})
     with (
-        patch.object(provider._client.models, "generate_content", side_effect=error),
+        patch.object(_provider_client(provider).models, "generate_content", side_effect=error),
         pytest.raises(AppError) as exc_info,
     ):
         provider.generate(system_prompt="s", user_message="u")
@@ -150,7 +162,7 @@ def test_gemini_provider_maps_other_client_errors_to_unavailable():
     provider = _provider()
     error = genai_errors.ClientError(403, {"message": "permission denied"})
     with (
-        patch.object(provider._client.models, "generate_content", side_effect=error),
+        patch.object(_provider_client(provider).models, "generate_content", side_effect=error),
         pytest.raises(AppError) as exc_info,
     ):
         provider.generate(system_prompt="s", user_message="u")
@@ -171,7 +183,7 @@ def test_gemini_provider_maps_504_server_error_to_timeout():
         },
     )
     with (
-        patch.object(provider._client.models, "generate_content", side_effect=error),
+        patch.object(_provider_client(provider).models, "generate_content", side_effect=error),
         pytest.raises(AppError) as exc_info,
     ):
         provider.generate(system_prompt="s", user_message="u")
@@ -184,7 +196,9 @@ def test_gemini_provider_maps_httpx_timeout_too():
     provider = _provider()
     with (
         patch.object(
-            provider._client.models, "generate_content", side_effect=httpx.ReadTimeout("timed out")
+            _provider_client(provider).models,
+            "generate_content",
+            side_effect=httpx.ReadTimeout("timed out"),
         ),
         pytest.raises(AppError) as exc_info,
     ):
@@ -193,7 +207,10 @@ def test_gemini_provider_maps_httpx_timeout_too():
 
 
 def test_default_provider_refuses_a_missing_key(monkeypatch):
-    monkeypatch.setattr(llm.settings, "google_api_key", "")
+    # Every slot must be cleared: one populated numbered key is still a
+    # usable deployment, so blanking only GOOGLE_API_KEY proves nothing.
+    for field in ("google_api_key", "google_api_key1", "google_api_key2", "google_api_key3"):
+        monkeypatch.setattr(llm.settings, field, "")
     with pytest.raises(AppError) as exc_info:
         llm.default_provider()
     assert exc_info.value.code is ErrorCode.LLM_UNAVAILABLE
@@ -387,3 +404,97 @@ def test_schema_violation_also_triggers_repair(profile):
     assert result.target_column == profile.target_column
     rows = storage.get_generations("ds-schema-repair")
     assert [row["state"] for row in rows] == ["failed", "success"]
+
+
+# --- Key rotation ------------------------------------------------------------
+#
+# Rotation and failover are the two halves of multi-key support and they fail
+# in opposite directions: rotation that does not rotate quietly drains one key
+# while the others idle, and failover that is too eager burns a second key's
+# quota on an error a second key cannot fix. Both need holding down.
+
+
+def _rotating(keys: list[str], behaviour):
+    """A GeminiProvider whose per-key call is replaced by `behaviour`.
+
+    Subclassing rather than patching genai: these tests are about which key is
+    chosen and when, so the network layer should not be constructed at all.
+    """
+
+    class _Provider(llm.GeminiProvider):
+        def _generate_with_key(self, api_key, *, system_prompt, user_message):
+            return behaviour(api_key)
+
+    return _Provider(api_keys=keys, model=settings.llm_model, timeout_s=1)
+
+
+def _ok(_api_key: str) -> llm.RawGeneration:
+    return llm.RawGeneration(text="{}", input_tokens=1, output_tokens=1)
+
+
+def _rate_limited(_api_key: str) -> llm.RawGeneration:
+    raise AppError(ErrorCode.LLM_RATE_LIMITED, "429", {"provider_status": "429"})
+
+
+def test_successive_calls_rotate_across_every_key():
+    seen: list[str] = []
+    keys = ["k1", "k2", "k3"]
+    provider = _rotating(keys, lambda key: (seen.append(key), _ok(key))[1])
+
+    for _ in range(len(keys)):
+        provider.generate(system_prompt="s", user_message="u")
+
+    assert sorted(seen) == sorted(keys)
+
+
+def test_a_rate_limited_key_fails_over_to_the_next_one():
+    tried: list[str] = []
+
+    def behaviour(api_key: str) -> llm.RawGeneration:
+        tried.append(api_key)
+        if len(tried) < 3:
+            return _rate_limited(api_key)
+        return _ok(api_key)
+
+    result = _rotating(["k1", "k2", "k3"], behaviour).generate(
+        system_prompt="s", user_message="u"
+    )
+
+    assert result.text == "{}"
+    assert len(tried) == 3
+    assert len(set(tried)) == 3
+
+
+def test_every_key_rate_limited_reports_how_many_were_tried():
+    with pytest.raises(AppError) as exc_info:
+        _rotating(["k1", "k2", "k3"], _rate_limited).generate(
+            system_prompt="s", user_message="u"
+        )
+
+    assert exc_info.value.code is ErrorCode.LLM_RATE_LIMITED
+    assert exc_info.value.details["keys_tried"] == "3"
+
+
+def test_a_non_quota_failure_does_not_spend_a_second_key():
+    tried: list[str] = []
+
+    def behaviour(api_key: str) -> llm.RawGeneration:
+        tried.append(api_key)
+        raise AppError(ErrorCode.LLM_UNAVAILABLE, "503", {})
+
+    with pytest.raises(AppError) as exc_info:
+        _rotating(["k1", "k2", "k3"], behaviour).generate(system_prompt="s", user_message="u")
+
+    assert exc_info.value.code is ErrorCode.LLM_UNAVAILABLE
+    assert len(tried) == 1
+
+
+def test_duplicate_keys_are_collapsed(monkeypatch):
+    # Two slots holding the same key look like two quotas and are one; the
+    # rotation would "fail over" onto the key that just returned 429.
+    monkeypatch.setattr(llm.settings, "google_api_key", "same")
+    monkeypatch.setattr(llm.settings, "google_api_key1", "same")
+    monkeypatch.setattr(llm.settings, "google_api_key2", "other")
+    monkeypatch.setattr(llm.settings, "google_api_key3", "")
+
+    assert llm.settings.google_api_key_list == ["same", "other"]

@@ -57,6 +57,64 @@ def _effective(series: pd.Series, result: DtypeResult) -> pd.Series:
     return result.effective_values if result.effective_values is not None else series
 
 
+def _apply_task_override(
+    requested: ProblemType,
+    inferred: ProblemType,
+    inferred_type: InferredType,
+    target_column: str,
+) -> tuple[ProblemType, float]:
+    """Accept a user-asserted task, but only one the target can actually carry.
+
+    The rule is about the target's *type*, not about which task the ladder
+    happened to pick:
+
+    - A discrete numeric target may be either. That is precisely the ambiguity
+      TASK_CONFIDENCE_DISCRETE_AMBIGUOUS reports, and the only case where an
+      override is really needed.
+    - A continuous numeric target may be forced to classification only if the
+      ladder itself was undecided, which it never is here - continuous means
+      regression at TASK_CONFIDENCE_TYPE_MATCH. Binning a continuous target is
+      a modelling decision with a threshold behind it, and this app has no
+      place to record that threshold, so it is refused rather than guessed.
+    - A boolean or categorical target cannot be regression. There is no
+      ordering to regress onto, and sklearn would either raise or silently
+      score nonsense.
+
+    Confidence becomes 1.0 on acceptance. That is not a claim the inference got
+    better - it records that the task is no longer inferred at all. The
+    provenance is kept separately, on the dataset row, so nothing presents a
+    user's assertion as something Python computed.
+    """
+    if requested is inferred:
+        return requested, heuristics.TASK_CONFIDENCE_TYPE_MATCH
+
+    classification = {
+        ProblemType.BINARY_CLASSIFICATION,
+        ProblemType.MULTICLASS_CLASSIFICATION,
+    }
+    if inferred_type is InferredType.NUMERIC_DISCRETE:
+        return requested, 1.0
+    if inferred_type is InferredType.NUMERIC_CONTINUOUS and requested in classification:
+        raise AppError(
+            ErrorCode.TARGET_TYPE_UNSUPPORTED,
+            f"'{target_column}' is continuous, so it cannot be treated as "
+            "classification without first being binned into classes. Bin it in "
+            "your own data and upload that column instead.",
+            {"target_column": target_column, "requested": requested.value},
+        )
+    raise AppError(
+        ErrorCode.TARGET_TYPE_UNSUPPORTED,
+        f"'{target_column}' holds {inferred_type.value} values, which cannot be "
+        f"treated as {requested.value.replace('_', ' ')}. The task inferred from "
+        f"the data is {inferred.value.replace('_', ' ')}.",
+        {
+            "target_column": target_column,
+            "requested": requested.value,
+            "inferred": inferred.value,
+        },
+    )
+
+
 def _map_problem_type(
     inferred_type: InferredType, unique_count: int
 ) -> tuple[ProblemType, float]:
@@ -267,10 +325,27 @@ def _build_column_profile(
 
 
 def profile(
-    frame: pd.DataFrame, dataset_id: str, filename: str, target_column: str
+    frame: pd.DataFrame,
+    dataset_id: str,
+    filename: str,
+    target_column: str,
+    problem_type_override: ProblemType | None = None,
 ) -> ProfileCard:
     """The stage 2 entry point. Raises AppError for anything wrong with the
-    chosen target; returns a complete ProfileCard otherwise."""
+    chosen target; returns a complete ProfileCard otherwise.
+
+    `problem_type_override` lets the caller settle a task the ladder could not.
+    A discrete numeric target - a 1-5 rating, a count - is genuinely ambiguous
+    between multiclass classification and regression, which is what
+    TASK_CONFIDENCE_DISCRETE_AMBIGUOUS exists to say. Before this parameter the
+    app reported that ambiguity and then offered no way to resolve it, which is
+    a dead-end warning.
+
+    An override is checked for coherence, never trusted blindly: the ladder
+    still runs first, and a combination the data cannot support is refused
+    rather than accepted. Metrics are then re-selected for the asserted task,
+    so primary_metric can never be left describing the inferred one.
+    """
     _validate_target(frame, target_column)
 
     n_rows = len(frame)
@@ -292,6 +367,10 @@ def profile(
     problem_type, task_confidence = _map_problem_type(
         target_result.inferred_type, target_unique_count
     )
+    if problem_type_override is not None:
+        problem_type, task_confidence = _apply_task_override(
+            problem_type_override, problem_type, target_result.inferred_type, target_column
+        )
 
     class_balance_ratio = metrics.class_balance_ratio(target_basis, problem_type)
     primary_metric, secondary_metrics = metrics.select_metrics(problem_type, class_balance_ratio)

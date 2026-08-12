@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 import difflib
+from collections.abc import Sequence
 
 from app import heuristics
 from app.models import (
@@ -550,7 +551,9 @@ def _check_declared_columns_exist(result: GenResult, profile: ProfileCard) -> Va
     )
 
 
-def _check_dropped_columns_not_referenced(tree: ast.AST, result: GenResult) -> ValidationCheck:
+def _check_dropped_columns_not_referenced(
+    tree: ast.AST, result: GenResult, excluded_columns: Sequence[str] = ()
+) -> ValidationCheck:
     """Not in the enumerated FAIL/WARN list for this stage, added because the
     fixture corpus explicitly asks for "a reference to a dropped column" and
     no other check covers it - declared_columns_exist checks the opposite
@@ -560,7 +563,11 @@ def _check_dropped_columns_not_referenced(tree: ast.AST, result: GenResult) -> V
     folded in, and called out again in the stage 4 report.
     """
     used = feature_usage_literals(tree)
-    dropped = {column.column for column in result.dropped_columns}
+    # User exclusions are held to the same standard as the model's own
+    # dropped_columns. An exclusion the model quietly ignored is exactly the
+    # failure this check exists to surface, and it matters more than a
+    # self-inconsistency because the user asked for it explicitly.
+    dropped = {column.column for column in result.dropped_columns} | set(excluded_columns)
     offenders = sorted(used & dropped)
     passed = not offenders
     message = (
@@ -608,7 +615,9 @@ def _check_syntax(code: str) -> tuple[ValidationCheck, ast.Module | None]:
     return check, tree
 
 
-def validate(result: GenResult, profile: ProfileCard) -> ValidationReport:
+def validate(
+    result: GenResult, profile: ProfileCard, excluded_columns: Sequence[str] = ()
+) -> ValidationReport:
     """Every static check this stage defines, in the order specified.
 
     When the code fails to parse, every check that needs an AST is left out
@@ -638,7 +647,7 @@ def validate(result: GenResult, profile: ProfileCard) -> ValidationReport:
     checks.append(_check_declared_columns_exist(result, profile))
 
     if tree is not None:
-        checks.append(_check_dropped_columns_not_referenced(tree, result))
+        checks.append(_check_dropped_columns_not_referenced(tree, result, excluded_columns))
 
     errors = sum(1 for c in checks if not c.passed and c.severity is ValidationSeverity.ERROR)
     warnings = sum(1 for c in checks if not c.passed and c.severity is ValidationSeverity.WARNING)

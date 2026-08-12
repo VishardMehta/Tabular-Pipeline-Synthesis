@@ -63,6 +63,12 @@ class ErrorCode(StrEnum):
     LLM_INVALID_OUTPUT = "LLM_INVALID_OUTPUT"
 
     # Validation. Stage 4.
+    # Declared but deliberately never raised today. A failing ValidationReport
+    # ships alongside the code, never instead of it - the reader is shown what
+    # failed and decides. This code is reserved for a future repair loop, where
+    # the server retries generation against the failing checks and gives up.
+    # Until that exists, `grep VALIDATION_FAILED app/` finding no `raise` is the
+    # correct result, not a missing implementation.
     VALIDATION_FAILED = "VALIDATION_FAILED"
 
 

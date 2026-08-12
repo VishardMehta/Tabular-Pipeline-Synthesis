@@ -12,6 +12,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from app.config import settings
 from app.llm import RawGeneration
 
 CASSETTE_DIR = Path(__file__).parent / "cassettes"
@@ -40,8 +41,12 @@ class CassetteProvider:
 
     name = "cassette"
 
-    def __init__(self, model: str = "gemini-3.6-flash") -> None:
-        self.model = model
+    def __init__(self, model: str | None = None) -> None:
+        # Defaults to whatever LLM_MODEL is configured. The cassette key is a
+        # hash of the prompt, not of the model, so replay is unaffected by the
+        # model name - but the recorded `model` column should not claim a model
+        # this deployment is not using.
+        self.model = model or settings.llm_model
 
     def generate(self, *, system_prompt: str, user_message: str) -> RawGeneration:
         key = cassette_key(system_prompt, user_message)

@@ -14,7 +14,9 @@ touching prompts.py.
 from __future__ import annotations
 
 import json
+import threading
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -70,6 +72,49 @@ class LLMProvider(Protocol):
     def generate(self, *, system_prompt: str, user_message: str) -> RawGeneration: ...
 
 
+class _KeyRing:
+    """Round-robin over the configured API keys, shared across requests.
+
+    Two jobs, and they are different. Rotation spreads load so three keys give
+    roughly three times the daily quota instead of one key being drained while
+    the other two idle. Failover handles the 429 that arrives anyway, by moving
+    to the next key and retrying the same request rather than surfacing an
+    error while unused quota exists.
+
+    The cursor is process-wide because default_provider() builds a fresh
+    provider per request - a per-instance cursor would restart at key one every
+    time and rotation would never happen. Locked because FastAPI runs sync
+    endpoints in a threadpool, so two requests can land here at once.
+
+    Clients are cached per key: genai.Client sets up an httpx pool, and
+    rebuilding one per call would throw away connection reuse.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._index = 0
+        self._clients: dict[str, genai.Client] = {}
+
+    def take(self, keys: list[str]) -> int:
+        """Reserve the next key index and advance the cursor past it."""
+        with self._lock:
+            index = self._index % len(keys)
+            self._index = (index + 1) % len(keys)
+            return index
+
+    def client(self, key: str) -> genai.Client:
+        with self._lock:
+            client = self._clients.get(key)
+            if client is None:
+                client = genai.Client(api_key=key)
+                self._clients[key] = client
+            return client
+
+
+# Process-wide, for the reason given in _KeyRing's docstring.
+_KEY_RING = _KeyRing()
+
+
 class GeminiProvider:
     """Talks to Gemini through google-genai.
 
@@ -79,15 +124,51 @@ class GeminiProvider:
 
     name = "gemini"
 
-    def __init__(self, api_key: str, model: str, timeout_s: int) -> None:
+    def __init__(self, api_keys: list[str], model: str, timeout_s: int) -> None:
+        if not api_keys:
+            raise ValueError("GeminiProvider needs at least one API key.")
         self.model = model
-        self._client = genai.Client(api_key=api_key)
+        self._api_keys = api_keys
         # HttpOptions.timeout is milliseconds; LLM_TIMEOUT_S in .env is seconds.
         self._timeout_ms = timeout_s * 1000
 
     def generate(self, *, system_prompt: str, user_message: str) -> RawGeneration:
+        """Try each key once, in rotation, before reporting a rate limit.
+
+        Only 429 moves to the next key. A 503, a timeout or a malformed
+        response is not a quota problem, and retrying it on a different key
+        would spend a second key's quota to get the same answer.
+        """
+        start = _KEY_RING.take(self._api_keys)
+        last_rate_limit: AppError | None = None
+
+        for offset in range(len(self._api_keys)):
+            key = self._api_keys[(start + offset) % len(self._api_keys)]
+            try:
+                return self._generate_with_key(
+                    key, system_prompt=system_prompt, user_message=user_message
+                )
+            except AppError as exc:
+                if exc.code is not ErrorCode.LLM_RATE_LIMITED:
+                    raise
+                last_rate_limit = exc
+
+        # Every key is rate-limited. The count goes in details so an operator
+        # can tell "the one key is exhausted" from "all three are", which are
+        # very different situations with the same error code.
+        assert last_rate_limit is not None
+        raise AppError(
+            ErrorCode.LLM_RATE_LIMITED,
+            "Every configured API key is rate-limited right now. Wait a moment and retry.",
+            {**last_rate_limit.details, "keys_tried": str(len(self._api_keys))},
+        ) from last_rate_limit
+
+    def _generate_with_key(
+        self, api_key: str, *, system_prompt: str, user_message: str
+    ) -> RawGeneration:
+        client = _KEY_RING.client(api_key)
         try:
-            response = self._client.models.generate_content(
+            response = client.models.generate_content(
                 model=self.model,
                 contents=user_message,
                 config=genai_types.GenerateContentConfig(
@@ -179,9 +260,17 @@ class StubProvider:
         self.text: str | None = None
         self.error: AppError | None = None
         self.calls = 0
+        # Recorded so a test can assert what actually reached the model, not
+        # only what came back. That is the only way to check that an excluded
+        # column really left the prompt rather than being filtered somewhere
+        # downstream of it.
+        self.last_user_message: str | None = None
+        self.last_system_prompt: str | None = None
 
     def generate(self, *, system_prompt: str, user_message: str) -> RawGeneration:
         self.calls += 1
+        self.last_user_message = user_message
+        self.last_system_prompt = system_prompt
         if self.error is not None:
             raise self.error
         return RawGeneration(text=self.text or "{}", input_tokens=1, output_tokens=1)
@@ -194,28 +283,39 @@ def default_provider() -> LLMProvider:
     whatever google-genai happens to raise when it is asked to authenticate
     with nothing.
     """
-    if not settings.google_api_key:
+    keys = settings.google_api_key_list
+    if not keys:
         raise AppError(
             ErrorCode.LLM_UNAVAILABLE,
             "No GOOGLE_API_KEY is configured for this deployment.",
         )
     return GeminiProvider(
-        api_key=settings.google_api_key,
+        api_keys=keys,
         model=settings.llm_model,
         timeout_s=settings.llm_timeout_s,
     )
 
 
-def generate(profile: ProfileCard, dataset_id: str, provider: LLMProvider) -> GenResult:
+def generate(
+    profile: ProfileCard,
+    dataset_id: str,
+    provider: LLMProvider,
+    excluded_columns: Sequence[str] = (),
+) -> GenResult:
     """Run the prompt against `provider`, repairing once on invalid output.
 
     Every attempt is recorded to the generations table, success or failure -
     that is what gives a later usage report real token and latency numbers
     instead of estimates, and it is why the record happens here rather than
     only at the end.
+
+    `excluded_columns` reaches the prompt, not the stored profile: the card
+    written to the generations table below is still the complete one the
+    profiler computed, so the record of what the server knew stays intact even
+    when the user narrowed what the model was shown.
     """
     system_prompt = prompts.SYSTEM_PROMPT
-    base_message = prompts.build_user_message(profile)
+    base_message = prompts.build_user_message(profile, excluded_columns)
     profile_json = profile.model_dump_json()
 
     message = base_message

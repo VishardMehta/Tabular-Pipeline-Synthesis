@@ -147,18 +147,26 @@ class ValidationSeverity(StrEnum):
     INFO = "info"
 
 
-# Five working states plus a terminal failure. There is no EXECUTING state:
-# MVP-1 does not run generated code, and MVP-1.5 execution is a separate opt-in
-# step rather than a stage of this pipeline.
+# Narrowed to the two states this API actually emits.
+#
+# It previously carried PROFILING, GENERATING, VALIDATING and FAILED as well.
+# None of them was ever constructed anywhere: /profile and /generate are
+# synchronous, so a caller holding the response is by definition past those
+# phases, and a failure comes back as the error envelope in errors.py with a
+# specific ErrorCode - never as a state. A published state machine that never
+# transitions is worse than none, because a client may reasonably poll on it.
+#
+# There is likewise no EXECUTING state: MVP-1 does not run generated code.
+#
+# If /generate is ever made asynchronous, the in-flight members come back
+# together with the endpoint that actually writes them, and not before.
 class JobState(StrEnum):
     """Lifecycle of one dataset through the MVP-1 flow."""
 
+    # Uploaded and stored, no profile computed yet.
     PENDING = "pending"
-    PROFILING = "profiling"
-    GENERATING = "generating"
-    VALIDATING = "validating"
+    # Profiled. The stored ProfileCard is readable and /generate can run.
     COMPLETE = "complete"
-    FAILED = "failed"
 
 
 # ---------------------------------------------------------------------------
@@ -490,6 +498,12 @@ class ProfileRequest(BaseModel):
     """Body of POST /api/datasets/{id}/profile."""
 
     target_column: str
+    # Settles a task the dtype ladder could not. Only a discrete numeric target
+    # is genuinely ambiguous - a 1-5 rating or a count reads as either
+    # multiclass classification or regression - and that is exactly the case
+    # task_confidence flags. An override incompatible with the target's type is
+    # refused, so this narrows a real ambiguity rather than overriding the data.
+    problem_type_override: ProblemType | None = None
 
 
 class ProfileResponse(BaseModel):
@@ -511,7 +525,23 @@ class GenerateRequest(BaseModel):
     edit the profile can make the model justify any pipeline at all, and the
     validator's self-consistency check would pass, because it compares the
     result against the same forged profile.
+
+    `excluded_columns` is not a counterexample to that rule, and the difference
+    is worth stating precisely. The rule forbids the caller supplying *facts*.
+    An exclusion is an *instruction*: the server still computes every statistic
+    itself, still stores the full profile, and still knows everything about the
+    excluded column - it simply does not offer it to the model as a feature.
+    Nothing the caller sends here can change what is true about the dataset.
     """
+
+    excluded_columns: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Columns the user has chosen to keep out of the pipeline entirely. "
+            "Omitted from the profile sent to the model, and the generated code "
+            "must not reference them. The target column cannot be excluded."
+        ),
+    )
 
 
 class GenerateResponse(BaseModel):
@@ -527,3 +557,76 @@ class HealthResponse(BaseModel):
 
     status: str
     version: str
+
+
+# The models below are read-only API bodies. None of them is reachable from
+# GenResult, so none is ever used as a response_schema, so none is prompt
+# surface - their docstrings are for humans, unlike the profile and result
+# models above. See the two-audiences note at the top of this file.
+
+
+class DatasetDetail(BaseModel):
+    """Result of GET /api/datasets/{id}.
+
+    Everything already known about a dataset, including its stored profile when
+    one exists. This is the recovery path: upload, profile and generate are all
+    POSTs, so without a read endpoint a browser refresh discarded a session
+    whose data was still sitting in SQLite well inside its TTL.
+    """
+
+    dataset_id: str
+    filename: str
+    n_rows: int
+    n_columns: int
+    columns: list[str]
+    created_at: str
+    # PENDING until /profile runs, COMPLETE after. Read from the datasets row,
+    # not hardcoded - this is the one endpoint where the stored state is the
+    # answer to the question being asked.
+    state: JobState
+    # True when the profile's problem_type was asserted by the caller rather
+    # than inferred. Kept here rather than on ProfileCard on purpose: the card
+    # is serialised into the prompt, and a field that changed the prompt would
+    # invalidate the recorded cassettes. This is also the honest place for it -
+    # it is a fact about the request, not about the dataset.
+    task_was_overridden: bool = False
+    # None when the dataset has been uploaded but not yet profiled. That is a
+    # normal state, not an error, which is why this endpoint does not fold it
+    # into DATASET_EXPIRED the way /generate does.
+    profile: ProfileCard | None = None
+
+
+class GenerationAttempt(BaseModel):
+    """One recorded call to the model provider.
+
+    Every attempt is written, successes and failures alike, including the
+    repair round. Tokens and latency here are measured facts about the request,
+    not claims about model quality - the no-fabricated-metrics rule is about
+    scores for the generated pipeline, which are still nowhere in this API.
+    """
+
+    attempt: int
+    state: str
+    provider: str
+    model: str
+    input_tokens: int | None
+    output_tokens: int | None
+    latency_ms: int
+    error_code: str | None
+    error_message: str | None
+    created_at: str
+
+
+class UsageResponse(BaseModel):
+    """Result of GET /api/datasets/{id}/usage.
+
+    Quota on the free tier is 20 requests per day per project per model, so
+    "how many attempts did this dataset actually cost" is operationally useful
+    rather than decorative.
+    """
+
+    dataset_id: str
+    attempts: list[GenerationAttempt]
+    total_attempts: int
+    total_input_tokens: int
+    total_output_tokens: int

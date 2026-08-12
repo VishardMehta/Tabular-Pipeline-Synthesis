@@ -503,3 +503,143 @@ def test_every_fixture_profiles_without_raising_on_a_sensible_target():
         else:
             card = profiler.profile(df, "id", fixture.name, target_col)
             assert card.columns
+
+
+# --- Task override -----------------------------------------------------------
+#
+# A discrete numeric target is genuinely ambiguous between multiclass
+# classification and regression, which is what TASK_CONFIDENCE_DISCRETE_AMBIGUOUS
+# reports. Before problem_type_override the app stated that ambiguity and then
+# offered no way to settle it.
+
+
+def _discrete_numeric_frame() -> pd.DataFrame:
+    """A 1-5 rating target: the real ambiguous case, not a contrived one."""
+    return pd.DataFrame(
+        {
+            "feature": list(range(40)),
+            "rating": [(i % 5) + 1 for i in range(40)],
+        }
+    )
+
+
+def test_discrete_numeric_target_is_reported_ambiguous_without_an_override():
+    card = profiler.profile(_discrete_numeric_frame(), "d", "r.csv", "rating")
+    assert card.task_confidence == heuristics.TASK_CONFIDENCE_DISCRETE_AMBIGUOUS
+
+
+def test_override_settles_a_discrete_numeric_target():
+    card = profiler.profile(
+        _discrete_numeric_frame(), "d", "r.csv", "rating", ProblemType.REGRESSION
+    )
+    assert card.problem_type is ProblemType.REGRESSION
+    # 1.0 records that the task is no longer inferred at all, rather than
+    # claiming the inference improved.
+    assert card.task_confidence == 1.0
+
+
+def test_override_reselects_the_metric_for_the_asserted_task():
+    """The failure this guards against is a card whose problem_type says
+    regression while primary_metric still describes the inferred
+    classification."""
+    inferred = profiler.profile(_discrete_numeric_frame(), "d", "r.csv", "rating")
+    overridden = profiler.profile(
+        _discrete_numeric_frame(), "d", "r.csv", "rating", ProblemType.REGRESSION
+    )
+    assert inferred.primary_metric is not overridden.primary_metric
+    assert overridden.primary_metric in {Metric.RMSE, Metric.MAE, Metric.R2}
+
+
+def test_override_matching_the_inference_is_accepted():
+    card = profiler.profile(
+        _discrete_numeric_frame(), "d", "r.csv", "rating", ProblemType.MULTICLASS_CLASSIFICATION
+    )
+    assert card.problem_type is ProblemType.MULTICLASS_CLASSIFICATION
+
+
+def test_continuous_target_cannot_be_forced_to_classification():
+    """Binning a continuous target is a modelling decision with a threshold
+    behind it, and there is nowhere in this app to record that threshold."""
+    frame = pd.DataFrame({"feature": range(60), "price": [i * 1.7 + 0.3 for i in range(60)]})
+    with pytest.raises(AppError) as exc_info:
+        profiler.profile(frame, "d", "p.csv", "price", ProblemType.BINARY_CLASSIFICATION)
+    assert exc_info.value.code is ErrorCode.TARGET_TYPE_UNSUPPORTED
+
+
+def test_categorical_target_cannot_be_forced_to_regression():
+    frame = pd.DataFrame(
+        {"feature": range(30), "city": ["Leeds", "York", "Hull"] * 10}
+    )
+    with pytest.raises(AppError) as exc_info:
+        profiler.profile(frame, "d", "c.csv", "city", ProblemType.REGRESSION)
+    assert exc_info.value.code is ErrorCode.TARGET_TYPE_UNSUPPORTED
+
+
+def test_no_override_leaves_every_fixture_unchanged():
+    """The override is opt-in. Passing None must reproduce the previous
+    behaviour exactly, on every fixture, or existing profiles silently drift."""
+    for path in sorted(FIXTURES.glob("*.csv")):
+        frame = pd.read_csv(path, engine="c")
+        if "target" not in frame.columns:
+            continue
+        try:
+            baseline = profiler.profile(frame, "d", path.name, "target")
+        except AppError:
+            continue
+        explicit_none = profiler.profile(frame, "d", path.name, "target", None)
+        assert baseline.model_dump() == explicit_none.model_dump()
+
+
+# --- The sampled path, at its real threshold ---------------------------------
+#
+# Every other sampling test monkeypatches SAMPLE_THRESHOLD down to 20 or 50 to
+# stay fast, which exercises the branch but never the constant. That leaves the
+# most consequential uploads - the large ones - covered only by construction.
+# Generating the frame with numpy costs ~0.07s and profiling it ~0.6s, cheap
+# enough to keep permanently rather than mark slow.
+
+
+def _large_frame(n_rows: int) -> pd.DataFrame:
+    rng = np.random.default_rng(0)
+    return pd.DataFrame(
+        {
+            "id": np.arange(n_rows),
+            "amount": rng.normal(50, 12, n_rows),
+            "tier": rng.choice(["bronze", "silver", "gold"], n_rows),
+            "churn": rng.choice(["yes", "no"], n_rows, p=[0.2, 0.8]),
+        }
+    )
+
+
+def test_sampling_engages_at_the_real_threshold():
+    card = profiler.profile(
+        _large_frame(heuristics.SAMPLE_THRESHOLD + 1), "big", "big.csv", "churn"
+    )
+    assert card.profiled_on_sample is True
+    assert card.sample_rows == heuristics.SAMPLE_THRESHOLD
+    # n_rows is the file's size, never the sample's - the disclosure in the UI
+    # compares the two, so conflating them would make it say "200,000 of
+    # 200,000 rows".
+    assert card.n_rows == heuristics.SAMPLE_THRESHOLD + 1
+
+
+def test_sampling_does_not_engage_at_exactly_the_threshold():
+    """Boundary: the constant is the largest size profiled whole."""
+    card = profiler.profile(_large_frame(heuristics.SAMPLE_THRESHOLD), "big", "big.csv", "churn")
+    assert card.profiled_on_sample is False
+    assert card.sample_rows is None
+
+
+def test_full_column_statistics_survive_sampling_at_real_scale():
+    """SAMPLE_THRESHOLD bounds the leakage test only. Every other statistic is
+    computed on the whole column, and at 200k rows that distinction is the one
+    most likely to be silently broken by a refactor."""
+    n_rows = heuristics.SAMPLE_THRESHOLD + 1
+    card = profiler.profile(_large_frame(n_rows), "big", "big.csv", "churn")
+
+    id_column = next(c for c in card.columns if c.name == "id")
+    assert id_column.unique_count == n_rows
+    assert ColumnFlag.ID_LIKE in id_column.flags
+
+    tier = next(c for c in card.columns if c.name == "tier")
+    assert tier.unique_count == 3

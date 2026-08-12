@@ -304,3 +304,235 @@ def test_cors_headers_present(client):
         },
     )
     assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+# --- Read endpoints ----------------------------------------------------------
+#
+# Upload, profile and generate are all POSTs. Without a read path a browser
+# refresh discarded a session whose dataset and profile were still in SQLite
+# and still inside their TTL, and re-generating costs one of twenty daily
+# model requests. These two GETs are that recovery path.
+
+
+def test_get_dataset_returns_detail_before_profiling(client):
+    dataset_id = upload(client)
+    response = client.get(f"/api/datasets/{dataset_id}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dataset_id"] == dataset_id
+    assert body["filename"] == "churn.csv"
+    assert len(body["columns"]) == body["n_columns"]
+    # Uploaded but not profiled is a normal point in the flow, not a failure,
+    # so it is a 200 with a null profile rather than a DATASET_EXPIRED.
+    assert body["profile"] is None
+
+
+def test_get_dataset_returns_the_stored_profile_after_profiling(client):
+    dataset_id = upload(client)
+    posted = client.post(
+        f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"}
+    ).json()["profile"]
+
+    body = client.get(f"/api/datasets/{dataset_id}").json()
+
+    assert body["profile"] is not None
+    # The recovery path must return the same card, not a re-derived one.
+    assert body["profile"] == posted
+
+
+def test_get_dataset_unknown_id_is_expired(client):
+    response = client.get("/api/datasets/does-not-exist")
+    assert response.status_code == 410
+    assert response.json()["error"]["code"] == ErrorCode.DATASET_EXPIRED.value
+
+
+def test_usage_records_every_attempt(client, stub_provider):
+    dataset_id, generate_response = profile_and_generate(client, stub_provider)
+    assert generate_response.status_code == 200
+
+    body = client.get(f"/api/datasets/{dataset_id}/usage").json()
+
+    assert body["dataset_id"] == dataset_id
+    assert body["total_attempts"] == len(body["attempts"]) == 1
+    attempt = body["attempts"][0]
+    assert attempt["state"] == "success"
+    assert attempt["attempt"] == 1
+    assert attempt["latency_ms"] >= 0
+
+
+def test_usage_is_empty_before_generating(client):
+    dataset_id = upload(client)
+    body = client.get(f"/api/datasets/{dataset_id}/usage").json()
+    assert body["attempts"] == []
+    assert body["total_attempts"] == 0
+    assert body["total_input_tokens"] == 0
+
+
+def test_usage_unknown_id_is_expired(client):
+    response = client.get("/api/datasets/does-not-exist/usage")
+    assert response.status_code == 410
+    assert response.json()["error"]["code"] == ErrorCode.DATASET_EXPIRED.value
+
+
+def test_usage_carries_no_model_performance_field(client, stub_provider):
+    """Tokens and latency are measured facts about the HTTP call. A score for
+    the generated pipeline is not, and must never appear - MVP-1 does not
+    execute the code, so any such number would be fabricated."""
+    dataset_id, _ = profile_and_generate(client, stub_provider)
+    body = client.get(f"/api/datasets/{dataset_id}/usage").json()
+
+    forbidden = {"accuracy", "score", "f1", "rmse", "auc", "r2", "metric_value"}
+    for attempt in body["attempts"]:
+        assert forbidden.isdisjoint(attempt.keys())
+
+
+# --- Column exclusion --------------------------------------------------------
+#
+# The user's only lever on the pipeline used to be the target column. An
+# exclusion is an instruction, not a fact - the server still computes and
+# stores the whole profile, it simply stops offering that column to the model.
+# That is why it does not breach the rule that GenerateRequest carries no
+# profile data.
+
+
+def test_generate_accepts_an_empty_exclusion_list(client, stub_provider):
+    """Backwards compatibility: the field is optional and defaults to empty."""
+    _, response = profile_and_generate(client, stub_provider)
+    assert response.status_code == 200
+
+
+def test_excluded_column_is_kept_out_of_the_prompt(client, stub_provider):
+    dataset_id = upload(client)
+    profile = client.post(
+        f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"}
+    ).json()["profile"]
+    stub_provider.text = _stub_gen_result_json(
+        target_column=profile["target_column"],
+        problem_type=profile["problem_type"],
+        primary_metric=profile["primary_metric"],
+    )
+    victim = next(c["name"] for c in profile["columns"] if c["name"] != "churn")
+
+    response = client.post(
+        f"/api/datasets/{dataset_id}/generate", json={"excluded_columns": [victim]}
+    )
+
+    assert response.status_code == 200
+    sent = stub_provider.last_user_message
+    payload = json.loads(sent[sent.index("{") : sent.rindex("}") + 1])
+    assert victim not in {column["name"] for column in payload["columns"]}
+    assert payload["columns_excluded_by_user"] == [victim]
+
+
+def test_excluding_an_unknown_column_is_refused(client, stub_provider):
+    """Silently ignoring it would leave the user believing a column was
+    dropped when it was not."""
+    dataset_id = upload(client)
+    client.post(f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"})
+
+    response = client.post(
+        f"/api/datasets/{dataset_id}/generate", json={"excluded_columns": ["no_such_column"]}
+    )
+
+    # 422 rather than 404: the request is well formed, the named column is
+    # just not in this dataset. Status comes from the table in errors.py, not
+    # from the raise site.
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == ErrorCode.TARGET_NOT_FOUND.value
+    assert stub_provider.calls == 0
+
+
+def test_excluding_the_target_is_refused(client, stub_provider):
+    dataset_id = upload(client)
+    client.post(f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"})
+
+    response = client.post(
+        f"/api/datasets/{dataset_id}/generate", json={"excluded_columns": ["churn"]}
+    )
+
+    assert response.status_code != 200
+    assert stub_provider.calls == 0
+
+
+def test_the_stored_profile_still_holds_every_column_after_an_exclusion(client, stub_provider):
+    """An exclusion narrows what the model is shown, never what the server
+    knows. The persisted card must stay complete."""
+    dataset_id = upload(client)
+    profile = client.post(
+        f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"}
+    ).json()["profile"]
+    stub_provider.text = _stub_gen_result_json(
+        target_column=profile["target_column"],
+        problem_type=profile["problem_type"],
+        primary_metric=profile["primary_metric"],
+    )
+    victim = next(c["name"] for c in profile["columns"] if c["name"] != "churn")
+    client.post(f"/api/datasets/{dataset_id}/generate", json={"excluded_columns": [victim]})
+
+    stored = client.get(f"/api/datasets/{dataset_id}").json()["profile"]
+    assert victim in {column["name"] for column in stored["columns"]}
+
+
+# --- Concurrency guard -------------------------------------------------------
+
+
+def test_a_second_concurrent_generation_is_refused(client, stub_provider):
+    """The free tier allows 20 model requests per day per project per model, so
+    a double-clicked button costs 10% of a day's budget for a duplicate answer.
+
+    The first call is held inside the provider until the test releases it, which
+    is the only way to have two genuinely in flight at once.
+    """
+    import threading
+
+    dataset_id = upload(client)
+    profile = client.post(
+        f"/api/datasets/{dataset_id}/profile", json={"target_column": "churn"}
+    ).json()["profile"]
+    stub_provider.text = _stub_gen_result_json(
+        target_column=profile["target_column"],
+        problem_type=profile["problem_type"],
+        primary_metric=profile["primary_metric"],
+    )
+
+    release = threading.Event()
+    entered = threading.Event()
+    original = stub_provider.generate
+
+    def blocking(*, system_prompt: str, user_message: str):
+        entered.set()
+        release.wait(timeout=10)
+        return original(system_prompt=system_prompt, user_message=user_message)
+
+    stub_provider.generate = blocking
+
+    first: dict = {}
+
+    def run_first():
+        first["response"] = client.post(f"/api/datasets/{dataset_id}/generate", json={})
+
+    worker = threading.Thread(target=run_first)
+    worker.start()
+    try:
+        assert entered.wait(timeout=10), "the first generation never reached the provider"
+        second = client.post(f"/api/datasets/{dataset_id}/generate", json={})
+    finally:
+        release.set()
+        worker.join(timeout=15)
+
+    assert second.status_code == 429
+    assert second.json()["error"]["code"] == ErrorCode.LLM_RATE_LIMITED.value
+    assert first["response"].status_code == 200
+    # The refused call must not have reached the provider at all - that is the
+    # entire point.
+    assert stub_provider.calls == 1
+
+
+def test_the_guard_releases_so_a_later_generation_still_works(client, stub_provider):
+    """A lock that is not released turns a one-off duplicate into a dataset
+    that can never be generated again."""
+    dataset_id, first = profile_and_generate(client, stub_provider)
+    assert first.status_code == 200
+    second = client.post(f"/api/datasets/{dataset_id}/generate", json={})
+    assert second.status_code == 200
+    assert stub_provider.calls == 2

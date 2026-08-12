@@ -197,3 +197,58 @@ def test_sampling_note_appears_only_when_sampling_happened(card, monkeypatch):
     assert "random sample of rows" in message
     # And it must say what was NOT sampled, or the model discounts every number.
     assert "computed on the complete file" in message
+
+
+# --- Column exclusion --------------------------------------------------------
+
+
+def test_empty_exclusion_matches_the_unfiltered_prompt(card):
+    """The load-bearing invariant behind excluded_columns.
+
+    Cassette files are named by sha256 of the exact prompt text, so if adding
+    this parameter changed the default output by even one byte, all three
+    recordings would stop matching and would cost real quota to re-record
+    (20 requests/day/model on the free tier). Byte equality, not shape
+    equality, is the assertion that protects them.
+    """
+    assert prompts.build_user_message(card, ()) == prompts.build_user_message(card)
+    assert prompts.build_user_message(card, []) == prompts.build_user_message(card)
+    assert prompts.serialize_profile(card, ()) == prompts.serialize_profile(card)
+
+
+def test_excluded_columns_leave_the_payload(card):
+    victim = next(c.name for c in card.columns if c.name != card.target_column)
+
+    payload = json.loads(prompts.serialize_profile(card, [victim]))
+
+    assert victim not in {column["name"] for column in payload["columns"]}
+    # Named explicitly rather than silently absent, so the model can record it
+    # in dropped_columns with a truthful reason instead of writing a pipeline
+    # that looks like the column never existed.
+    assert payload["columns_excluded_by_user"] == [victim]
+
+
+def test_exclusion_does_not_change_n_columns(card):
+    """n_columns is a fact about the file. Excluding a column changes what the
+    model is offered, not what the dataset is."""
+    victim = next(c.name for c in card.columns if c.name != card.target_column)
+    payload = json.loads(prompts.serialize_profile(card, [victim]))
+    assert payload["n_columns"] == card.n_columns
+
+
+def test_exclusion_instruction_tells_the_model_what_to_do(card):
+    """The say-Y rule from CLAUDE.md: a bare prohibition is weaker than naming
+    the behaviour wanted. The message must state the positive action, not only
+    that the column is gone."""
+    victim = next(c.name for c in card.columns if c.name != card.target_column)
+    message = prompts.build_user_message(card, [victim])
+    assert "dropped_columns" in message
+    assert victim in message
+
+
+def test_target_column_survives_exclusion_of_everything_else(card):
+    """Excluding the target is refused at the route, but the serializer should
+    not corrupt the payload even if it is asked directly."""
+    others = [c.name for c in card.columns if c.name != card.target_column]
+    payload = json.loads(prompts.serialize_profile(card, others))
+    assert payload["target_column"] == card.target_column

@@ -52,6 +52,17 @@ CREATE INDEX IF NOT EXISTS idx_datasets_created_at ON datasets (created_at);
 # erroring on every insert that no longer matches the old shape.
 _ADD_PROFILE_COLUMN = "ALTER TABLE datasets ADD COLUMN profile_json TEXT"
 
+# Whether the profile's problem_type was asserted by the caller rather than
+# inferred. Added by ALTER for the identical reason as the column above.
+#
+# Recorded here rather than on ProfileCard deliberately. The card is serialised
+# into the prompt, so a new field on it would change every prompt and
+# invalidate the recorded cassettes - and provenance is a fact about the
+# request, not about the dataset, so this row is where it belongs.
+_ADD_TASK_OVERRIDDEN_COLUMN = (
+    "ALTER TABLE datasets ADD COLUMN task_overridden INTEGER NOT NULL DEFAULT 0"
+)
+
 # One row per attempt, not per generation - a repaired second attempt is a
 # second row, not an overwrite, so the failed first attempt stays on record
 # for whatever eventually reads token and latency data out of this table.
@@ -109,6 +120,8 @@ def init_db() -> None:
         connection.executescript(_GENERATIONS_SCHEMA)
         with contextlib.suppress(sqlite3.OperationalError):
             connection.execute(_ADD_PROFILE_COLUMN)
+        with contextlib.suppress(sqlite3.OperationalError):
+            connection.execute(_ADD_TASK_OVERRIDDEN_COLUMN)
 
 
 def insert_dataset(
@@ -151,17 +164,27 @@ def get_dataset(dataset_id: str) -> sqlite3.Row | None:
         return cursor.fetchone()
 
 
-def save_profile(dataset_id: str, profile_json: str) -> None:
+def save_profile(
+    dataset_id: str, profile_json: str, task_was_overridden: bool = False
+) -> None:
     """Persist a computed ProfileCard so /generate can read it back.
 
     Overwrites silently on a repeat call for the same dataset - profiling is
     deterministic (profiler.py fixes its RNG seed), so a second profile of
     the same target column reproduces the first exactly, and there is no
     older version worth keeping.
+
+    Advances `state` in the same statement. That column was written once at
+    insert and read by nothing, which made it dead data asserting a lifecycle
+    the code never advanced. One dataset genuinely has two observable states
+    here - uploaded, and profiled - so the column now records the one fact it
+    is capable of recording, in the single place that fact changes.
     """
     with connect() as connection:
         connection.execute(
-            "UPDATE datasets SET profile_json = ? WHERE id = ?", (profile_json, dataset_id)
+            "UPDATE datasets SET profile_json = ?, state = ?, task_overridden = ? "
+            "WHERE id = ?",
+            (profile_json, JobState.COMPLETE.value, int(task_was_overridden), dataset_id),
         )
 
 

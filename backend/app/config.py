@@ -15,11 +15,25 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # Several keys are supported because the free tier's per-day quota is per
+    # project, not per caller: one key runs out long before a working session
+    # does. GOOGLE_API_KEY stays the single-key name so existing setups keep
+    # working; the numbered ones are additive.
     google_api_key: str = ""
-    llm_model: str = "gemini-3.6-flash"
+    google_api_key1: str = ""
+    google_api_key2: str = ""
+    google_api_key3: str = ""
+    llm_model: str = "gemini-3.1-flash-lite"
     llm_timeout_s: int = 60
 
     deployment_env: str = "local"
+
+    # Stage-6 placeholders. Nothing reads the three below, and
+    # enable_local_execution gates only the boot assertion at the bottom of this
+    # file - there is no execution module, and scikit-learn is not a backend
+    # dependency. They are kept rather than deleted because the boot guard is a
+    # genuine fail-closed assertion worth having in place before the feature
+    # lands. Do not read this block as "execution exists and is switched off".
     enable_local_execution: bool = False
     execution_timeout_s: int = 60
     execution_sample_rows: int = 500
@@ -46,6 +60,30 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def google_api_key_list(self) -> list[str]:
+        """Every configured key, in declaration order, deduplicated.
+
+        Order is stable so the rotation cursor in llm.py means the same thing
+        across a restart. Duplicates are dropped because two entries holding
+        the same key would look like two quotas and are one - the rotation
+        would "fail over" onto the key that just returned 429.
+        """
+        candidates = [
+            self.google_api_key,
+            self.google_api_key1,
+            self.google_api_key2,
+            self.google_api_key3,
+        ]
+        seen: set[str] = set()
+        keys: list[str] = []
+        for candidate in candidates:
+            key = candidate.strip()
+            if key and key not in seen:
+                seen.add(key)
+                keys.append(key)
+        return keys
 
 
 settings = Settings()

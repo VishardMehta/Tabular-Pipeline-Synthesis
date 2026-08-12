@@ -15,7 +15,7 @@ These were left vague in the blueprint. Deciding them now prevents rework.
 | Frontend language | TypeScript | Schemas mirror Pydantic; type drift is the main integration bug |
 | CSV read engine | **C engine only. Drop pyarrow entirely.** | pyarrow has different null and dtype semantics, and no `chunksize`. If the profiler reads with pyarrow and the generated `pd.read_csv` uses the C engine, they disagree about the data. At 50MB the speed gain is irrelevant. Consistency wins. |
 | Duplicate column names | **Reject the upload.** Error `DUPLICATE_COLUMNS`, message naming the offenders. | pandas mangles to `col`, `col.1`. The LLM then writes code referencing `col.1`, which does not exist in the user's file. Surfacing the mangling is possible but complicates every downstream layer for a rare case. |
-| Gemini model | `gemini-2.5-flash` | Flash-Lite is too weak for pipeline code. Pro's free daily cap is trial-only. |
+| Gemini model | ~~`gemini-2.5-flash`~~ -> **`gemini-3.1-flash-lite`** | **Superseded twice, both empirically.** (1) `gemini-2.5-flash` 404s for newly issued keys - "no longer available to new users", 10/10 calls. It still appears in `models.list()`, so the listing is a catalogue, not an entitlement check. (2) The original "Flash-Lite is too weak for pipeline code" was measured in the stage-0 spike, *before `prompts.py` existed*. Re-measured against the finished prompt: 39-50 line pipelines, 12/12 static checks, ~5s, across all three cassette fixtures. See docs/spike-01. |
 | Gemini SDK | `google-genai` | The unified SDK. `google-generativeai` is the deprecated one; do not let Claude Code reach for it from stale training data. |
 | Prompt caching | None | Gemini's context caching has a high minimum token floor. Your prompt is ~2k tokens. Not applicable. |
 | Frontend state | Single `useReducer` in `App.tsx` | Four screens, one flow. Redux and Zustand are both overkill, but screen-local state loses the profile on a failed generation. |
@@ -56,7 +56,7 @@ Note on scikit-learn: MVP-1 does not need it, but **MVP-1.5 does**, because the 
 
 ```
 GOOGLE_API_KEY=
-LLM_MODEL=gemini-2.5-flash
+LLM_MODEL=gemini-3.1-flash-lite
 LLM_TIMEOUT_S=60
 
 DEPLOYMENT_ENV=local          # local | hosted
@@ -71,8 +71,22 @@ DATASET_TTL_HOURS=24
 MAX_FILE_MB=50
 MAX_COLS=1000
 
+GOOGLE_API_KEY1=            # optional extra keys; requests round-robin and a
+GOOGLE_API_KEY2=            # 429 fails over to the next one
+GOOGLE_API_KEY3=
+
 CORS_ORIGINS=http://localhost:5173
 ```
+
+**Free-tier quota is per project *per model*.** The quota id is
+`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limit 20/day on the flash
+tier. Two consequences, both measured:
+
+- Several keys issued from the **same** Google Cloud project share one bucket,
+  so key rotation does not multiply quota. It buys failover, not headroom. For
+  real headroom the keys must come from separate projects.
+- Changing `LLM_MODEL` grants a **fresh** bucket. Exhausting one model does not
+  exhaust the others, which is the fastest unblock mid-session.
 
 The startup guard is not a convention, it is an assertion in `config.py` that raises on boot:
 
@@ -283,7 +297,7 @@ How to drive it, in order of importance:
 7. RPD exhausted mid-iteration during prompt tuning. Cassettes from the first real response.
 8. Subprocess timeout leaves an orphan. Kill the process group, and reap in a `finally`.
 9. TypeScript types drift from Pydantic. Consider generating them from the OpenAPI schema once stage 0 stabilises.
-10. Scope creep back toward the SRS. The "not building" list exists for this. Re-read it weekly.
+10. Scope creep back toward the SRS. The "not building" list exists for this. Re-read it weekly. **It is now committed at [docs/not-building.md](docs/not-building.md)** - it was referenced here for most of the project without existing, which is precisely the condition this item warns about.
 
 ---
 
