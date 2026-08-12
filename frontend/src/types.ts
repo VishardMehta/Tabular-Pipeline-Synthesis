@@ -57,11 +57,7 @@ export type ValidationSeverity = "error" | "warning" | "info";
 
 export type JobState =
   | "pending"
-  | "profiling"
-  | "generating"
-  | "validating"
-  | "complete"
-  | "failed";
+  | "complete";
 
 // --- Profiling --------------------------------------------------------------
 
@@ -188,6 +184,7 @@ export interface DatasetUploadResponse {
 
 export interface ProfileRequest {
   target_column: string;
+  problem_type_override?: ProblemType;
 }
 
 export interface ProfileResponse {
@@ -199,6 +196,34 @@ export interface GenerateResponse {
   state: JobState;
   result: GenResult;
   validation: ValidationReport;
+}
+
+export interface DatasetDetail extends DatasetUploadResponse {
+  created_at: string;
+  task_was_overridden: boolean;
+  profile: ProfileCard | null;
+}
+
+export interface GenerationAttempt {
+  attempt: number;
+  state: string;
+  provider: string;
+  model: string;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  latency_ms: number;
+  error_code: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+/** Measured provider usage. This is never a model-quality or performance score. */
+export interface UsageResponse {
+  dataset_id: string;
+  attempts: GenerationAttempt[];
+  total_attempts: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
 }
 
 export interface HealthResponse {

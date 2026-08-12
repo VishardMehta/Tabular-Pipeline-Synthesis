@@ -1,140 +1,193 @@
 @import "tailwindcss";
 
 /**
- * Design tokens for Agentic AutoML.
+ * Design tokens for AutoNexus.
  *
- * Source: docs/Agentic_AutoML_Apple_HIG_Design_System.md, section 4 (token
- * structure), section 5 (color), section 6 (typography), section 7.3
- * (spacing - Tailwind's own 4px-derived scale already matches this exactly,
- * so no custom spacing tokens are defined here), section 29 (shadows),
- * section 30 (radius), section 57 (recommended visual direction).
+ * Source: stitch_stitch_agentic_automl_mvp_1/agentic_precision/DESIGN.md and
+ * precision_automl_system/DESIGN.md, cross-read against
+ * docs/Agentic_AutoML_Apple_HIG_Design_System.md.
  *
- * Semantic names only (--color-surface, not --color-gray-50). Hex values
- * were chosen and then checked for contrast, not chosen for how they look
- * in isolation - see the ratios noted next to each text color below.
+ * The two stitch systems agree on everything that matters visually and
+ * disagree only on scale (Agentic Precision allows a 32px headline and a
+ * 1440px container, Precision AutoML caps type at 20px inside 900px). Taken
+ * the wider of the two, because this app has a code viewer and a column table
+ * that need the room, and kept the tighter one's density rules for rows.
+ *
+ * The four rules that define the look, all of which the previous token set
+ * broke:
+ *   1. Hanken Grotesk is narrative, JetBrains Mono is logic. Every value that
+ *      came out of the dataset or the model is mono. No exceptions.
+ *   2. No shadows on anything permanent. Depth is hairline borders and tonal
+ *      layering. Shadows are for ephemeral surfaces only.
+ *   3. Radii are sharp: 4px controls, 8px cards, 2px data tags. Never a pill.
+ *   4. Hover does not lift. The border darkens or turns blue. Stability over
+ *      motion - the "Precision" feel.
+ *
+ * Semantic names only (--color-surface, not --color-gray-50). Contrast ratios
+ * noted next to each text colour were computed, not eyeballed.
  */
 @theme {
-  /* Surfaces */
-  --color-bg: #f7f7f8;
-  --color-surface: #ffffff;
-  --color-surface-secondary: #f1f2f4;
-  --color-surface-hover: #f5f6f7;
-  --color-surface-elevated: #ffffff;
+  /* Surfaces. Tonal layering: the canvas is grey so white cards read as
+     raised without a shadow doing the work. */
+  --color-bg: #000000;
+  --color-surface: #1c1c1e;
+  --color-surface-secondary: #2c2c2e;
+  --color-surface-hover: #3a3a3c;
+  --color-sunken: #111113;
 
-  /* Text - ratios are against --color-surface (white) */
-  --color-text-primary: #16171b; /* 17.9:1 */
-  --color-text-secondary: #5b5f6b; /* 6.4:1 */
-  --color-text-tertiary: #82868f; /* 3.65:1 - large text and secondary metadata only */
-  --color-text-disabled: #c1c4cc;
+  /* Ink. Deep slate rather than black - grounds the interface without the
+     harshness of #000 against a warm-grey canvas. Ratios are on white. */
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #aeaeb2;
+  --color-text-tertiary: #8e8e93;
+  --color-text-disabled: #636366;
   --color-text-on-accent: #ffffff;
 
-  /* Semantic */
-  --color-accent: #3654d6; /* 6.2:1 on white */
-  --color-accent-hover: #2c46b8; /* 7.85:1 on white */
-  --color-accent-subtle: #eef1fc;
-  --color-success: #106b40; /* 6.56:1 on white, 5.87:1 on success-subtle */
-  --color-success-subtle: #e6f6ee;
-  --color-warning: #9a5b00; /* 5.43:1 on white, 4.86:1 on warning-subtle */
-  --color-warning-subtle: #fdf1dc;
-  --color-error: #c22a2a; /* 5.74:1 on white, 4.94:1 on error-subtle */
-  --color-error-subtle: #fbeaea;
-  --color-info: var(--color-accent); /* interactive and informational share one meaning - section 5.2 */
+  /* Primary blue. Reserved for actions, active state and agent progress -
+     "The Agent in motion". Never decorative.
+     accent is the fill, accent-ink is the same hue darkened enough to be
+     legible as text on white, which #0066ff at 3.6:1 is not. */
+  --color-accent: #0a84ff;
+  --color-accent-hover: #409cff;
+  --color-accent-ink: #71b7ff;
+  --color-accent-subtle: #0d2845;
+  --color-accent-border: #205b90;
+
+  /* Semantic status. Tint background, high-contrast ink, per DESIGN.md. */
+  --color-success: #30d158;
+  --color-success-subtle: #10271a;
+  --color-success-border: #246b37;
+  --color-warning: #ffd60a;
+  --color-warning-subtle: #2b2504;
+  --color-warning-border: #6b5b08;
+  --color-warning-bar: #ffd60a;
+  --color-error: #ff453a;
+  --color-error-subtle: #331313;
+  --color-error-border: #77302b;
+  --color-info: var(--color-accent-ink);
   --color-info-subtle: var(--color-accent-subtle);
 
-  /* Borders */
-  --color-separator: #e7e7ea;
-  --color-border: #dadbdf;
+  /* Hairlines. There is exactly one border weight in this system: 1px. */
+  --color-border: #38383a;
+  --color-border-strong: #545458;
+  --color-separator: #2c2c2e;
   --color-focus-ring: var(--color-accent);
 
-  /* Typography - semantic roles, not arbitrary sizes. Section 6.1. */
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI",
-    sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, monospace;
+  /* Code viewer runs dark against the light shell, as in the mock. Its own
+     surface tokens rather than reusing the light ones inverted. */
+  --color-code-bg: #14161c;
+  --color-code-chrome: #1c1f27;
+  --color-code-border: #2a2e39;
+  --color-code-gutter: #565d70;
+  --color-code-text: #e6e9f0;
 
-  --text-display: 3.25rem; /* 52px */
-  --text-display--line-height: 1.1;
-  --text-display--font-weight: 600;
+  /* Type. Two families, strictly divided by meaning. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Segoe UI", sans-serif;
+  --font-title: var(--font-display);
+  --font-heading: var(--font-display);
+  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
-  --text-large-title: 2.25rem; /* 36px */
-  --text-large-title--line-height: 1.15;
-  --text-large-title--font-weight: 600;
+  --text-display: 2rem; /* 32px - headline-lg */
+  --text-display--line-height: 2.5rem;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.02em;
 
-  --text-title: 1.625rem; /* 26px */
-  --text-title--line-height: 1.25;
+  --text-title: 1.5rem; /* 24px - headline-md */
+  --text-title--line-height: 2rem;
   --text-title--font-weight: 600;
+  --text-title--letter-spacing: -0.01em;
 
-  --text-heading: 1.1875rem; /* 19px */
-  --text-heading--line-height: 1.3;
+  --text-heading: 1.125rem; /* 18px - headline-sm */
+  --text-heading--line-height: 1.5rem;
   --text-heading--font-weight: 600;
 
-  --text-body: 1rem; /* 16px */
-  --text-body--line-height: 1.55;
+  --text-body: 1rem; /* 16px - body-lg */
+  --text-body--line-height: 1.5rem;
   --text-body--font-weight: 400;
 
-  --text-secondary-size: 0.875rem; /* 14px - "secondary" is a color token above, avoid colliding */
-  --text-secondary-size--line-height: 1.45;
+  --text-secondary-size: 0.875rem; /* 14px - body-sm. "secondary" is also a
+                                      colour token, hence the suffix. */
+  --text-secondary-size--line-height: 1.25rem;
 
-  --text-caption: 0.75rem; /* 12px */
-  --text-caption--line-height: 1.4;
-  --text-caption--font-weight: 500;
+  --text-small: 0.75rem; /* 12px */
+  --text-small--line-height: 1rem;
+
+  /* Mono roles. data-display is the workhorse for values in tables and tiles;
+     data-code is the code viewer; label-caps is the uppercase mono used for
+     every section label, table header and breadcrumb in the system. */
+  --text-data: 0.875rem; /* 14px - data-display */
+  --text-data--line-height: 1.25rem;
+  --text-data--font-weight: 500;
+  --text-data--letter-spacing: -0.01em;
+
+  --text-data-sm: 0.75rem; /* 12px */
+  --text-data-sm--line-height: 1.125rem;
 
   --text-code: 0.8125rem; /* 13px */
-  --text-code--line-height: 1.65;
+  --text-code--line-height: 1.375rem;
 
-  /* Radius. Section 30: a small number of radii, not everything a pill. */
-  --radius-sm: 0.5rem; /* 8px - inputs, buttons, compact elements */
-  --radius-md: 0.75rem; /* 12px */
-  --radius-lg: 1rem; /* 16px - major surfaces, upload zone */
+  --text-caps: 0.6875rem; /* 11px - label-caps */
+  --text-caps--line-height: 1rem;
+  --text-caps--font-weight: 700;
+  --text-caps--letter-spacing: 0.05em;
 
-  /* Shadows. Section 29: very restrained, no huge diffuse or colored shadows. */
-  --shadow-xs: 0 1px 2px rgba(16, 17, 27, 0.04);
-  --shadow-sm: 0 1px 2px rgba(16, 17, 27, 0.04), 0 2px 6px rgba(16, 17, 27, 0.05);
-  --shadow-md: 0 4px 12px rgba(16, 17, 27, 0.08), 0 2px 4px rgba(16, 17, 27, 0.04);
-  --shadow-lg: 0 16px 40px rgba(16, 17, 27, 0.14), 0 4px 10px rgba(16, 17, 27, 0.06);
+  /* Shape. Soft-geometric: crisp, never bubbly. */
+  --radius-tag: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+
+  /* Ephemeral surfaces only - dropdowns, popovers. Nothing permanent gets
+     one. "Natural Ambient", not a glow. */
+  --shadow-ambient: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --shadow-overlay: 0 24px 60px rgba(0, 0, 0, 0.4);
 
   --content-max-width: 1440px;
-  --prose-max-width: 65ch;
+  --prose-max-width: 68ch;
 }
 
 /*
- * Dark mode: intentionally deferred this session.
- *
- * TODO(dark-mode): redefine every --color-* token above inside this block
- * with dark-appropriate values before shipping dark mode. The semantic
- * *role* of each token must stay the same (surface is still "the card
- * background", not renamed) - only the value changes. See section 5.4:
- * do not implement dark mode by inverting light values. Until this block is
- * filled in, prefers-color-scheme: dark users see the light palette, which
- * is legible and correct, just not adapted.
+ * AutoNexus begins in a dark, technical workspace. The semantic roles
+ * remain stable, so future appearance preferences can adjust values without
+ * touching components.
  */
 @media (prefers-color-scheme: dark) {
 }
 
 @layer base {
   * {
-    border-color: var(--color-separator);
+    border-color: var(--color-border);
   }
 
   html {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   body {
     background-color: var(--color-bg);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
+    font-size: 1rem;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    min-width: 320px;
+    overflow-x: hidden;
   }
 
+  /* Tabular figures everywhere a number can change: stops row counts and
+     percentages from jittering column width as they update. */
   code,
   pre,
   kbd,
   samp {
     font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
   }
 
-  /* Never remove the focus indicator without replacing it. Section 34. */
+  /* Active state is a 1px primary border, never an outer glow - but keyboard
+     focus still needs to be unmistakable, so it keeps a real ring.
+     Section 34: never remove the indicator without replacing it. */
   :focus-visible {
     outline: 2px solid var(--color-focus-ring);
     outline-offset: 2px;
@@ -142,23 +195,33 @@
   }
 
   ::selection {
-    background-color: var(--color-accent-subtle);
+    background-color: #3e4d91;
     color: var(--color-text-primary);
   }
 }
 
 /*
- * Motion. Section 32: subtle, short, purposeful. Durations centralised here
- * rather than repeated as magic numbers in every component.
+ * Motion. Smooth and linear, suggesting mechanical efficiency - explicitly
+ * not playful. Durations live here rather than as magic numbers in
+ * components.
  */
 :root {
-  --duration-fast: 150ms; /* micro interaction, skeleton-to-content fade */
-  --duration-normal: 220ms; /* screen transitions */
-  --duration-slow: 300ms; /* large transitions */
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
   --ease-out-standard: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer utilities {
+  /* The uppercase mono label. Used often enough to earn a class. */
+  .label-caps {
+    font-family: var(--font-mono);
+    font-size: var(--text-caps);
+    line-height: var(--text-caps--line-height);
+    font-weight: var(--text-caps--font-weight);
+    letter-spacing: var(--text-caps--letter-spacing);
+    text-transform: uppercase;
+  }
+
   /* Screen transitions: fade plus a small translate, never a side-slide. */
   .screen-enter {
     animation: screen-enter var(--duration-normal) var(--ease-out-standard) both;
@@ -197,7 +260,7 @@
       var(--color-surface-secondary) 63%
     );
     background-size: 400% 100%;
-    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+    animation: skeleton-shimmer 1.6s linear infinite;
   }
 
   @keyframes skeleton-shimmer {
@@ -209,8 +272,8 @@
     }
   }
 
-  /* Checklist rows: light stagger on entry, capped so a long list never
-     feels slow to finish appearing. Applied via style="--stagger-index: N". */
+  /* Checklist rows: light stagger on entry, capped so a long list never feels
+     slow to finish appearing. Applied via style="--stagger-index: N". */
   .stagger-row {
     animation: stagger-row var(--duration-normal) var(--ease-out-standard) both;
     animation-delay: calc(min(var(--stagger-index, 0), 10) * 28ms);
@@ -243,9 +306,522 @@
       transform: scale(1);
     }
   }
+
+  /* Thin high-precision progress bar, primary blue, linear travel. */
+  .progress-indeterminate::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    width: 35%;
+    background-color: var(--color-accent);
+    animation: progress-sweep 1.1s linear infinite;
+  }
+
+  @keyframes progress-sweep {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(386%);
+    }
+  }
+
+  .landing-page {
+    background:
+      radial-gradient(circle at 22% -10%, rgba(10, 132, 255, 0.11), transparent 30rem),
+      radial-gradient(circle at 91% 28%, rgba(94, 92, 230, 0.08), transparent 32rem),
+      #000;
+  }
+
+  .landing-orb {
+    position: absolute;
+    pointer-events: none;
+    filter: blur(1px);
+    border-radius: 999px;
+    opacity: 0.55;
+  }
+
+  .landing-orb--one {
+    width: 26rem;
+    height: 26rem;
+    top: 19rem;
+    left: -17rem;
+    background: radial-gradient(circle, rgba(45, 212, 191, 0.11), transparent 68%);
+  }
+
+  .landing-orb--two {
+    width: 34rem;
+    height: 34rem;
+    top: 0;
+    right: -22rem;
+    background: radial-gradient(circle, rgba(167, 139, 250, 0.13), transparent 68%);
+  }
+
+  .landing-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.38rem 0.7rem;
+    border: 1px solid rgba(190, 204, 255, 0.15);
+    border-radius: 999px;
+    background: rgba(168, 181, 255, 0.055);
+    color: rgba(217, 224, 255, 0.78);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    line-height: 1;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }
+
+  .landing-kicker__dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: #83f0d0;
+    box-shadow: 0 0 0.75rem rgba(131, 240, 208, 0.7);
+  }
+
+  .landing-brand-mark {
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    transition: transform 220ms var(--ease-out-standard);
+  }
+
+  .landing-brand-mark img {
+    width: 2.2rem;
+    height: 1.45rem;
+    object-fit: contain;
+  }
+
+  .group:hover .landing-brand-mark { transform: scale(1.05); }
+
+  .landing-title {
+    max-width: 10.6ch;
+    color: #f7f8ff;
+    padding-block: 0.06em 0.12em;
+    font-size: clamp(3rem, 5.5vw, 5.3rem);
+    font-weight: 600;
+    letter-spacing: -0.07em;
+    line-height: 1.035;
+  }
+
+  .landing-title span {
+    background: linear-gradient(112deg, #b6e8ef 2%, #c3b8ff 49%, #efb1f1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .landing-primary-cta,
+  .landing-nav-cta {
+    display: inline-flex;
+    min-height: 2.45rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(10, 132, 255, 0.72);
+    border-radius: 0.55rem;
+    background: #0a84ff;
+    padding: 0 0.85rem;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    transition: background-color 160ms ease, transform 160ms ease;
+  }
+
+  .landing-primary-cta {
+    min-height: 3.15rem;
+    padding: 0 1.15rem;
+    border-radius: 0.65rem;
+    box-shadow: 0 10px 32px rgba(135, 143, 255, 0.18);
+  }
+
+  .landing-primary-cta:hover,
+  .landing-nav-cta:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.07);
+  }
+
+  .landing-console {
+    background: linear-gradient(145deg, rgba(31, 35, 53, 0.8), rgba(12, 14, 21, 0.96));
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .landing-console__glow {
+    position: absolute;
+    width: 20rem;
+    height: 12rem;
+    top: -7rem;
+    left: 30%;
+    background: radial-gradient(ellipse, rgba(126, 151, 255, 0.2), transparent 70%);
+    filter: blur(8px);
+  }
+
+  .landing-preview-fact {
+    min-width: 0;
+    padding-right: 0.35rem;
+  }
+
+  .landing-preview-fact span,
+  .landing-preview-fact strong {
+    display: block;
+  }
+
+  .landing-preview-fact span {
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.34);
+    font-family: var(--font-mono);
+    font-size: 0.53rem;
+    letter-spacing: 0.06em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .landing-preview-fact strong {
+    margin-top: 0.38rem;
+    color: rgba(213, 240, 255, 0.78);
+    font-size: 0.69rem;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+
+  .landing-grid {
+    background-image: linear-gradient(rgba(171, 188, 255, 0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(171, 188, 255, 0.09) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: linear-gradient(to bottom, black, transparent 85%);
+  }
+
+  .landing-feature {
+    min-height: 14rem;
+    padding: 0.25rem 0.75rem 0.75rem 0;
+  }
+
+  .landing-feature__icon {
+    display: flex;
+    width: 2.2rem;
+    height: 2.2rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(185, 198, 255, 0.16);
+    border-radius: 0.6rem;
+    background: rgba(180, 193, 255, 0.06);
+    color: #c7d3ff;
+  }
+
+  .landing-feature h2 {
+    margin-top: 1.25rem;
+    color: rgba(248, 249, 255, 0.93);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  .landing-feature p {
+    max-width: 34ch;
+    margin-top: 0.65rem;
+    color: rgba(212, 218, 233, 0.53);
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  /* The working product uses an intentional, quietly dimensional shell.
+     It borrows the visual grammar of the supplied plan component: a live
+     vertical sequence that explains where the person is in the workflow. */
+  .workspace-shell {
+    display: grid;
+    grid-template-columns: 16.25rem minmax(0, 1fr);
+    min-height: 100vh;
+    background: var(--color-bg);
+    transition: grid-template-columns 260ms var(--ease-out-standard);
+  }
+
+  .workspace-shell--collapsed { grid-template-columns: 4.75rem minmax(0, 1fr); }
+
+  .workspace-rail {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    border-right: 1px solid rgba(255, 255, 255, 0.065);
+    background: rgba(28, 28, 30, 0.72);
+    padding: 1.5rem 1rem 1.15rem;
+    backdrop-filter: blur(18px);
+  }
+
+  .workspace-rail__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2rem;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .workspace-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: #f5f7ff;
+    font-size: 0.94rem;
+    font-weight: 650;
+    letter-spacing: -0.035em;
+  }
+
+  .workspace-brand__mark {
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.6rem;
+    overflow: hidden;
+  }
+
+  .workspace-brand__mark img {
+    width: 2.1rem;
+    height: 1.4rem;
+    object-fit: contain;
+  }
+
+  .workspace-rail__toggle { display: grid; width: 2rem; height: 2rem; place-items: center; border: 1px solid transparent; border-radius: 0.5rem; color: var(--color-text-tertiary); transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease; }
+  .workspace-rail__toggle:hover { border-color: var(--color-border); background: var(--color-surface-hover); color: var(--color-text-primary); }
+
+  .workspace-rail__eyebrow {
+    grid-column: 1 / -1;
+    margin: 1.75rem 0 0.85rem 0.6rem;
+    color: var(--color-text-disabled);
+    font-family: var(--font-mono);
+    font-size: 0.59rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .workspace-stages {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .workspace-stage {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 4.05rem;
+    align-items: center;
+    gap: 0.7rem;
+    border-radius: 0.55rem;
+    padding: 0.55rem 0.6rem;
+    color: var(--color-text-tertiary);
+    text-align: left;
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  .workspace-stage:not(:disabled):hover {
+    background: rgba(176, 190, 255, 0.075);
+    color: var(--color-text-primary);
+  }
+
+  .workspace-stage:disabled { cursor: default; }
+
+  .workspace-stage__line { display: none; }
+
+  .workspace-stage__icon {
+    display: flex;
+    width: 1.7rem;
+    height: 1.7rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: #10141e;
+  }
+
+  .workspace-stage__number,
+  .workspace-stage__label,
+  .workspace-stage__detail { display: block; }
+
+  .workspace-stage__number {
+    color: var(--color-text-disabled);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    line-height: 1;
+  }
+
+  .workspace-stage__label {
+    margin-top: 0.13rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: -0.018em;
+  }
+
+  .workspace-stage__detail {
+    margin-top: 0.1rem;
+    color: var(--color-text-disabled);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    line-height: 1.2;
+  }
+
+  .workspace-stage--done { color: var(--color-text-secondary); }
+  .workspace-stage--done .workspace-stage__icon { border-color: var(--color-success-border); background: var(--color-success-subtle); color: var(--color-success); }
+  .workspace-stage--active, .workspace-stage--working { border: 1px solid rgba(32, 91, 144, 0.5); background: linear-gradient(90deg, var(--color-accent-subtle), rgba(13, 40, 69, 0.22)); color: var(--color-text-primary); }
+  .workspace-stage--active .workspace-stage__icon, .workspace-stage--working .workspace-stage__icon { border-color: var(--color-accent-border); background: #0d365c; color: #d7ebff; box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.08); }
+  .workspace-stage--active .workspace-stage__number, .workspace-stage--working .workspace-stage__number { color: var(--color-accent); }
+
+  .workspace-rail__footer {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 1rem 0.35rem 0;
+    color: var(--color-text-secondary);
+    font-size: 0.68rem;
+    line-height: 1.3;
+  }
+
+  .workspace-rail__footer span:not(.workspace-rail__status-dot) { display: block; margin-top: 0.13rem; color: var(--color-text-disabled); font-family: var(--font-mono); font-size: 0.57rem; }
+  .workspace-rail__status-dot { width: 0.45rem; height: 0.45rem; flex: 0 0 auto; margin-top: 0.25rem; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 0.65rem rgba(48, 209, 88, 0.45); }
+
+  .workspace-main { min-width: 0; }
+  .workspace-topbar { display: flex; height: 4.6rem; align-items: center; justify-content: space-between; gap: 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 0 3rem; background: rgba(0, 0, 0, 0.74); backdrop-filter: blur(16px); }
+  .workspace-topbar__crumb { color: var(--color-text-secondary); font-size: 0.75rem; font-weight: 600; letter-spacing: -0.015em; }
+  .workspace-topbar__crumb span { margin: 0 0.35rem; color: var(--color-text-disabled); }
+  .workspace-topbar__state { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--color-text-secondary); font-family: var(--font-mono); font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .workspace-topbar__dot, .workspace-topbar__pulse { width: 0.43rem; height: 0.43rem; border-radius: 50%; background: var(--color-accent); }
+  .workspace-topbar__pulse { animation: workspace-pulse 1.25s ease-in-out infinite; }
+  @keyframes workspace-pulse { 50% { opacity: 0.35; box-shadow: 0 0 0 0.28rem rgba(168, 181, 255, 0.08); } }
+  .workspace-content { max-width: 90rem; margin: 0 auto; padding: clamp(2rem, 5vw, 4.75rem) clamp(1.3rem, 5vw, 4.5rem) 4rem; }
+
+  .stage-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; margin-bottom: 2.5rem; padding-bottom: 1.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+  .stage-intro__copy { max-width: 49rem; }
+  .stage-intro__eyebrow { display: flex; align-items: center; gap: 0.5rem; color: var(--color-accent-ink); font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+  .stage-intro__eyebrow > span:not(.stage-intro__orb) { color: var(--color-text-tertiary); }
+  .stage-intro__orb { display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border: 1px solid rgba(64, 156, 255, 0.35); border-radius: 50%; background: rgba(10, 132, 255, 0.1); }
+  .stage-intro h1 { max-width: 15ch; margin-top: 0.9rem; color: #f4f6ff; font-size: clamp(2.15rem, 4.1vw, 3.7rem); font-weight: 600; letter-spacing: -0.06em; line-height: 0.98; }
+  .stage-intro__description { margin-top: 1rem; color: var(--color-text-secondary); font-size: 1rem; line-height: 1.55; }
+  .stage-intro__action { flex: 0 0 auto; }
+
+  .workspace-content .text-display { color: #f4f6ff; font-size: clamp(2.2rem, 4vw, 3.6rem); line-height: 1.02; letter-spacing: -0.055em; }
+  .workspace-content .text-heading { letter-spacing: -0.025em; }
+  .workspace-content .rounded-lg.border { border-color: rgba(255, 255, 255, 0.1); background-color: #1c1c1e; }
+  .workspace-content .bg-sunken { background-color: #111113; }
+  .workspace-content .bg-surface { background-color: #1c1c1e; }
+  .workspace-content .hover\:bg-sunken:hover { background-color: #262629; }
+
+  .activity-overlay { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 1.25rem; background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(12px); }
+  .activity-dialog { width: min(32rem, 100%); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); background: linear-gradient(145deg, #1c1c1e, #111113); padding: clamp(1.35rem, 4vw, 2rem); box-shadow: var(--shadow-overlay); }
+  .activity-dialog__top { display: flex; align-items: center; gap: 0.8rem; }
+  .activity-dialog__signal { display: grid; width: 2.5rem; height: 2.5rem; flex: 0 0 auto; place-items: center; border: 1px solid var(--color-accent-border); border-radius: var(--radius-md); background: var(--color-accent-subtle); }
+  .activity-dialog__signal img { width: 1.9rem; height: 1.3rem; object-fit: contain; }
+  .activity-dialog__live { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem; color: var(--color-text-tertiary); font-family: var(--font-mono); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .activity-dialog__live span { width: 0.38rem; height: 0.38rem; border-radius: 50%; background: var(--color-accent); animation: activity-live 1.2s ease-in-out infinite; }
+  @keyframes activity-live { 50% { opacity: 0.36; box-shadow: 0 0 0 0.28rem rgba(10, 132, 255, 0.11); } }
+  .activity-dialog h2 { margin-top: 1.45rem; color: var(--color-text-primary); font-size: clamp(1.45rem, 4vw, 1.8rem); font-weight: 600; letter-spacing: -0.045em; line-height: 1.08; }
+  .activity-dialog > p:not(.label-caps) { margin-top: 0.7rem; color: var(--color-text-secondary); font-size: 0.91rem; line-height: 1.55; }
+  .activity-dialog__indeterminate { position: relative; height: 0.18rem; margin-top: 1.5rem; overflow: hidden; border-radius: 999px; background: var(--color-surface-secondary); }
+  .activity-dialog__indeterminate span { position: absolute; inset-block: 0; width: 36%; border-radius: inherit; background: linear-gradient(90deg, transparent, var(--color-accent), transparent); animation: activity-sweep 1.5s ease-in-out infinite; }
+  .activity-dialog__indeterminate--handoff span { width: 100%; background: var(--color-accent); animation: none; transition: width 240ms ease-out; transform: none; }
+  @keyframes activity-sweep { from { transform: translateX(-130%); } to { transform: translateX(390%); } }
+  .activity-dialog__list-label { margin-top: 1.35rem; color: var(--color-text-tertiary); font-family: var(--font-mono); font-size: 0.59rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .activity-dialog ol { margin-top: 0.5rem; border-top: 1px solid var(--color-separator); padding-top: 0.65rem; }
+  .activity-dialog li { display: flex; align-items: center; gap: 0.7rem; padding: 0.52rem 0; color: var(--color-text-disabled); font-size: 0.81rem; }
+  .activity-dialog__step--done { color: var(--color-text-secondary); }
+  .activity-dialog__step--active { color: var(--color-text-primary); }
+  .activity-dialog__step-icon { display: grid; width: 1.3rem; height: 1.3rem; flex: 0 0 auto; place-items: center; border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-text-disabled); }
+  .activity-dialog__step--active .activity-dialog__step-icon { border-color: var(--color-accent-border); background: var(--color-accent-subtle); color: var(--color-accent-ink); }
+  .activity-dialog__step--done .activity-dialog__step-icon { border-color: var(--color-success-border); background: var(--color-success-subtle); color: var(--color-success); }
+  .activity-dialog__rule { display: flex; align-items: flex-start; gap: 0.5rem; margin-top: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-sunken); padding: 0.72rem 0.8rem; color: var(--color-text-tertiary); font-family: var(--font-mono); font-size: 0.61rem; line-height: 1.5; }
+  .activity-dialog__rule span { width: 0.38rem; height: 0.38rem; flex: 0 0 auto; margin-top: 0.27rem; border-radius: 50%; background: var(--color-accent); }
+
+  .workspace-shell--collapsed .workspace-rail { align-items: center; padding-right: 0.75rem; padding-left: 0.75rem; }
+  .workspace-shell--collapsed .workspace-rail__top { width: 100%; grid-template-columns: 1fr; justify-items: center; }
+  .workspace-shell--collapsed .workspace-brand { justify-content: center; width: 2rem; }
+  .workspace-shell--collapsed .workspace-brand__name,
+  .workspace-shell--collapsed .workspace-rail__eyebrow,
+  .workspace-shell--collapsed .workspace-stage__copy,
+  .workspace-shell--collapsed .workspace-stage__arrow,
+  .workspace-shell--collapsed .workspace-rail__footer { display: none; }
+  .workspace-shell--collapsed .workspace-rail__toggle { margin-top: 0.35rem; }
+  .workspace-shell--collapsed .workspace-stages { width: 100%; margin-top: 1.8rem; }
+  .workspace-shell--collapsed .workspace-stage { justify-content: center; padding: 0.55rem; }
+
+  @media (max-width: 840px) {
+    .workspace-shell { display: block; }
+    .workspace-rail { position: relative; height: auto; min-height: 0; padding: 1rem 1.1rem 0.75rem; border-right: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+    .workspace-rail__eyebrow, .workspace-rail__footer { display: none; }
+    .workspace-rail__toggle { display: none; }
+    .workspace-shell--collapsed { grid-template-columns: 1fr; }
+    .workspace-shell--collapsed .workspace-rail { align-items: stretch; padding: 1rem 1.1rem 0.75rem; }
+    .workspace-shell--collapsed .workspace-brand { justify-content: flex-start; width: auto; }
+    .workspace-shell--collapsed .workspace-brand__name { display: inline; }
+    .workspace-shell--collapsed .workspace-stages { width: auto; margin-top: 1rem; }
+    .workspace-shell--collapsed .workspace-stage { justify-content: flex-start; padding: 0.4rem; }
+    .workspace-shell--collapsed .workspace-stage__copy { display: block; }
+    .workspace-stages { flex-direction: row; margin-top: 1rem; overflow-x: auto; padding-bottom: 0.2rem; }
+    .workspace-stage { min-width: 8.4rem; min-height: 3.3rem; padding: 0.4rem; }
+    .workspace-stage__line, .workspace-stage__detail { display: none; }
+    .workspace-stage__number { display: none; }
+    .workspace-stage__label { margin: 0; font-size: 0.68rem; }
+    .workspace-topbar { height: 4rem; padding: 0 1.25rem; }
+    .workspace-content { padding: 2rem 1.25rem 3rem; }
+    .stage-intro { align-items: flex-start; flex-direction: column; gap: 1.1rem; margin-bottom: 1.75rem; padding-bottom: 1.4rem; }
+    .stage-intro h1 { font-size: clamp(2.1rem, 10vw, 3rem); }
+  }
 }
 
-/* Section 32 / Rule 11: respect reduced-motion without exception. */
+/*
+ * Generated code viewer. Dark surface against the light shell, as in the
+ * step 5 mock. Shiki emits one <span class="line"> per source line and
+ * nothing else structural, so line numbers are a CSS counter against that
+ * class rather than a second highlighting pass or a transformer plugin.
+ */
+.shiki-wrapper pre {
+  margin: 0;
+  padding: 1rem 1.25rem 1rem 0;
+  overflow: visible;
+  counter-reset: line;
+  background-color: transparent !important;
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: var(--text-code--line-height);
+}
+
+.shiki-wrapper .line {
+  counter-increment: line;
+  display: inline-block;
+  width: 100%;
+  padding-left: 4rem;
+  position: relative;
+  /* An empty source line is an empty span, which collapses to zero height and
+     stacks its gutter number on top of the next one. Python code is full of
+     blank lines, so this is not an edge case. */
+  min-height: var(--text-code--line-height);
+}
+
+.shiki-wrapper .line:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.shiki-wrapper .line::before {
+  content: counter(line);
+  position: absolute;
+  left: 0;
+  width: 3rem;
+  text-align: right;
+  color: var(--color-code-gutter);
+  user-select: none;
+}
+
+/* Respect reduced-motion without exception. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

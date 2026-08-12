@@ -1,19 +1,23 @@
 /**
- * One selectable column name.
+ * One selectable column, as a table row.
  *
- * Deliberately carries only a name. DatasetUploadResponse has nothing else
- * per column yet - no inferred type, no missingness, no unique count. That
- * data does not exist until /profile runs, which is why it appears on the
- * Profile screen instead. Section 44: "Do not overwhelm the user with every
- * statistic yet" - here that is not a choice, it is what the API allows.
+ * Deliberately carries only a name and its position. DatasetUploadResponse
+ * has nothing else per column - no inferred type, no missingness, no unique
+ * count - and that data does not exist until /profile runs, which is why the
+ * mock's "Inferred Type / Unique Values / Missing Data" columns are absent
+ * here and present on the Profile screen instead. The index is real: it is
+ * the column's ordinal position in the CSV header, which is genuinely useful
+ * when two columns have similar names.
  */
 
 export function ColumnRow({
   name,
+  index,
   selected,
   onSelect,
 }: {
   name: string;
+  index: number;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -23,23 +27,29 @@ export function ColumnRow({
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-sm px-4 py-3 text-left transition-colors duration-150 ${
-        selected ? "bg-accent-subtle" : "hover:bg-surface-hover"
+      className={`flex w-full items-center gap-4 border-b border-separator px-5 py-2.5 text-left transition-colors duration-150 last:border-b-0 ${
+        selected ? "bg-accent-subtle" : "hover:bg-surface-secondary"
       }`}
     >
       <span
-        className={`flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-          selected ? "border-accent" : "border-border"
+        aria-hidden
+        className={`flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+          selected ? "border-accent bg-accent" : "border-border-strong bg-surface"
         }`}
       >
-        {selected ? <span className="size-1.5 rounded-full bg-accent" /> : null}
+        {selected ? <span className="size-1.5 rounded-full bg-white" /> : null}
       </span>
+
       <span
-        className={`truncate font-mono text-secondary-size ${
-          selected ? "font-medium text-text-primary" : "text-text-primary"
+        className={`min-w-0 flex-1 truncate font-mono text-data ${
+          selected ? "font-semibold text-accent-ink" : "text-text-primary"
         }`}
       >
         {name}
+      </span>
+
+      <span className="shrink-0 font-mono text-data-sm text-text-tertiary">
+        col {index + 1}
       </span>
     </button>
   );

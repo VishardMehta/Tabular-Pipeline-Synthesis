@@ -178,3 +178,38 @@ export function PipelineIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 10h12" />
+      <path d="M11.5 5.5L16 10l-4.5 4.5" />
+    </svg>
+  );
+}
+
+export function SparkleIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M10 3l1.6 4.4L16 9l-4.4 1.6L10 15l-1.6-4.4L4 9l4.4-1.6z" />
+    </svg>
+  );
+}
+
+export function ListOrderedIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M8 5.5h9M8 10h9M8 14.5h9" />
+      <path d="M3.4 4.4h1.1v3M3.2 13.6h2.2M3.2 15.6h2.2" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M10 3l6 2v4.6c0 3.4-2.4 6.4-6 7.4-3.6-1-6-4-6-7.4V5z" />
+      <path d="M7.6 10l1.7 1.7 3.2-3.4" />
+    </svg>
+  );
+}

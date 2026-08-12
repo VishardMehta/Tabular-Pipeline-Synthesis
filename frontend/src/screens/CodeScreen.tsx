@@ -1,82 +1,96 @@
-/**
- * Screen 4: the generated code and the validation checklist.
- *
- * Stage 0 renders the code in a plain <pre>. Syntax highlighting via shiki is a
- * stage 5 concern and would only obscure whether the contract works.
- */
+/** Screen 5: the generated code and the validation checklist. */
 
-import { Button, Card, NotExecutedNotice, SectionTitle } from "../components/ui";
-import type { GenResult, ValidationCheck, ValidationReport } from "../types";
+import { Button } from "../components/shared/Button";
+import { Card } from "../components/shared/Card";
+import { ChevronLeftIcon } from "../components/shared/icons";
+import { CodeBlock } from "../components/pipeline/CodeBlock";
+import { UnexecutedNotice } from "../components/pipeline/UnexecutedNotice";
+import { ValidationChecklist } from "../components/pipeline/ValidationChecklist";
+import { StageIntro } from "../components/layout/StageIntro";
+import type { GenResult, UsageResponse, ValidationReport } from "../types";
 
-function CheckRow({ check }: { check: ValidationCheck }) {
-  const tone = check.passed
-    ? "text-emerald-700"
-    : check.severity === "error"
-      ? "text-red-700"
-      : check.severity === "warning"
-        ? "text-amber-700"
-        : "text-slate-600";
-  return (
-    <li className="flex gap-3 py-2">
-      <span className={`mt-0.5 font-mono text-sm ${tone}`}>{check.passed ? "PASS" : "FAIL"}</span>
-      <div className="flex-1">
-        <p className="text-sm font-medium text-slate-900">
-          {check.title}
-          <span className="ml-2 text-xs font-normal uppercase tracking-wide text-slate-400">
-            {check.severity}
-          </span>
-        </p>
-        <p className="mt-0.5 text-sm text-slate-600">{check.message}</p>
-        {check.details.length > 0 ? (
-          <p className="mt-1 font-mono text-xs text-slate-500">{check.details.join(", ")}</p>
-        ) : null}
-      </div>
-    </li>
-  );
+const number = new Intl.NumberFormat("en-US");
+
+function measuredLatency(usage: UsageResponse) {
+  const total = usage.attempts.reduce((sum, attempt) => sum + attempt.latency_ms, 0);
+  return total < 1_000 ? `${total} ms` : `${(total / 1_000).toFixed(1)} s`;
 }
 
 export function CodeScreen({
   result,
   validation,
+  usage,
   onBack,
   onRestart,
 }: {
   result: GenResult;
   validation: ValidationReport;
+  usage: UsageResponse | null;
   onBack: () => void;
   onRestart: () => void;
 }) {
   return (
-    <div className="space-y-4">
-      <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <SectionTitle>Validation</SectionTitle>
-          <span className="text-sm text-slate-600">
-            {validation.error_count} errors, {validation.warning_count} warnings
+    <div className="space-y-6">
+      <StageIntro
+        stage={5}
+        trail={<span className="font-mono normal-case tracking-normal text-text-secondary">{result.target_column}</span>}
+        title="Your pipeline, ready to inspect."
+        description={<p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>Written for target</span>
+          <span className="rounded-tag bg-accent-subtle px-2 py-0.5 font-mono text-data text-accent-ink">
+            {result.target_column}
           </span>
-        </div>
-        <ul className="divide-y divide-slate-100">
-          {validation.checks.map((check) => (
-            <CheckRow key={check.check_id} check={check} />
-          ))}
-        </ul>
+          <span>- read it before you run it.</span>
+        </p>}
+      />
+
+      <UnexecutedNotice />
+
+      {usage ? (
+        <Card>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="label-caps text-text-tertiary">Generation record</p>
+              <p className="mt-1 text-body-sm text-text-secondary">
+                Measured provider usage, not a pipeline-performance score.
+              </p>
+            </div>
+            {usage.attempts.at(-1) ? (
+              <span className="rounded-tag bg-sunken px-2 py-1 font-mono text-data-sm text-text-secondary">
+                {usage.attempts.at(-1)?.provider} / {usage.attempts.at(-1)?.model}
+              </span>
+            ) : null}
+          </div>
+          <dl className="mt-5 grid gap-4 border-t border-separator pt-4 sm:grid-cols-3">
+            <div>
+              <dt className="label-caps text-text-tertiary">Provider attempts</dt>
+              <dd className="mt-1 font-mono text-body text-text-primary">{usage.total_attempts}</dd>
+            </div>
+            <div>
+              <dt className="label-caps text-text-tertiary">Tokens</dt>
+              <dd className="mt-1 font-mono text-body text-text-primary">
+                {number.format(usage.total_input_tokens + usage.total_output_tokens)}
+              </dd>
+            </div>
+            <div>
+              <dt className="label-caps text-text-tertiary">Provider time</dt>
+              <dd className="mt-1 font-mono text-body text-text-primary">{measuredLatency(usage)}</dd>
+            </div>
+          </dl>
+        </Card>
+      ) : null}
+
+      {/* The validation report comes before the code, not after: a person
+          deciding whether to trust this pipeline should see what was checked
+          first, not discover it below a 200-line scroll. */}
+      <Card padded={false} className="overflow-hidden">
+        <ValidationChecklist report={validation} />
       </Card>
 
-      <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <SectionTitle>Pipeline</SectionTitle>
-          <Button variant="secondary" onClick={() => navigator.clipboard.writeText(result.code)}>
-            Copy
-          </Button>
-        </div>
-        <NotExecutedNotice />
-        <pre className="mt-3 max-h-[28rem] overflow-auto rounded-md bg-slate-900 p-4 text-xs leading-relaxed text-slate-100">
-          <code>{result.code}</code>
-        </pre>
-      </Card>
+      <CodeBlock code={result.code} />
 
-      <div className="flex justify-between">
-        <Button variant="secondary" onClick={onBack}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="secondary" onClick={onBack} icon={<ChevronLeftIcon className="size-4" />}>
           Back to strategy
         </Button>
         <Button variant="secondary" onClick={onRestart}>

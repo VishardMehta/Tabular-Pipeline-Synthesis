@@ -7,11 +7,14 @@
  */
 
 import type {
+  DatasetDetail,
   DatasetUploadResponse,
   ErrorDetail,
   ErrorResponse,
   GenerateResponse,
+  ProblemType,
   ProfileResponse,
+  UsageResponse,
 } from "./types";
 
 // Overridable because port 8000 is a popular default and collides often. Set
@@ -60,7 +63,11 @@ async function send<T>(path: string, init: RequestInit): Promise<T> {
   } catch {
     throw new ApiError({
       code: "NETWORK_ERROR",
-      message: "Could not reach the API. Check that the backend is running on port 8000.",
+      // Quote the base actually in use, not a hardcoded default. A fetch that
+      // throws before producing a Response is also what a CORS rejection looks
+      // like from here, so the origin is worth naming too - the two failures
+      // are indistinguishable to JavaScript but have very different fixes.
+      message: `Could not reach the API at ${API_BASE}. Check that the backend is running, and that it allows requests from ${window.location.origin}.`,
       retryable: true,
       details: {},
     });
@@ -74,23 +81,71 @@ export function uploadDataset(file: File): Promise<DatasetUploadResponse> {
   return send<DatasetUploadResponse>("/datasets", { method: "POST", body });
 }
 
+/**
+ * The three members of ProblemType, at runtime.
+ *
+ * Needed because a React click handler wired directly to a function like
+ * `onClick={handleProfile}` passes its event as the first argument, and
+ * TypeScript permits that: a zero-argument function is assignable to a handler
+ * that receives an event. The event then reaches JSON.stringify, which throws
+ * "Converting circular structure to JSON" on the React fiber hanging off the
+ * DOM node - a confusing crash a long way from its cause.
+ *
+ * Guarding here rather than only at the call site because the compiler cannot
+ * see this class of mistake, so it will be made again.
+ */
+const PROBLEM_TYPES: readonly string[] = [
+  "binary_classification",
+  "multiclass_classification",
+  "regression",
+];
+
+function asProblemType(value: unknown): ProblemType | undefined {
+  return typeof value === "string" && PROBLEM_TYPES.includes(value)
+    ? (value as ProblemType)
+    : undefined;
+}
+
 export function profileDataset(
   datasetId: string,
   targetColumn: string,
+  problemTypeOverride?: ProblemType,
 ): Promise<ProfileResponse> {
+  const override = asProblemType(problemTypeOverride);
   return send<ProfileResponse>(`/datasets/${datasetId}/profile`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ target_column: targetColumn }),
+    body: JSON.stringify({
+      target_column: targetColumn,
+      ...(override ? { problem_type_override: override } : {}),
+    }),
   });
 }
 
-export function generatePipeline(datasetId: string): Promise<GenerateResponse> {
-  // Empty body on purpose. The profile lives server side; sending it would let
-  // the client rewrite the facts the model reasons over.
+export function generatePipeline(
+  datasetId: string,
+  excludedColumns: string[] = [],
+): Promise<GenerateResponse> {
+  // The profile lives server side. Feature exclusions are user instructions,
+  // not client-supplied facts, and the server validates every selected name.
+  //
+  // Same guard as profileDataset: only strings are serialised, so a click
+  // event arriving here through a directly-wired handler cannot reach
+  // JSON.stringify and throw on React's circular fiber references.
+  const excluded = Array.isArray(excludedColumns)
+    ? excludedColumns.filter((column): column is string => typeof column === "string")
+    : [];
   return send<GenerateResponse>(`/datasets/${datasetId}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: "{}",
+    body: JSON.stringify({ excluded_columns: excluded }),
   });
+}
+
+export function getDataset(datasetId: string): Promise<DatasetDetail> {
+  return send<DatasetDetail>(`/datasets/${datasetId}`, { method: "GET" });
+}
+
+export function getDatasetUsage(datasetId: string): Promise<UsageResponse> {
+  return send<UsageResponse>(`/datasets/${datasetId}/usage`, { method: "GET" });
 }

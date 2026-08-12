@@ -1,22 +1,29 @@
 /**
- * Section 25: "one of the most visually important components." The
- * rationale text below is generated here, in the frontend, from real
+ * The metric recommendation - one of the most visually important components
+ * on the Profile screen, and the one place the design system spends a solid
+ * blue field rather than a hairline-bordered white card. That weight is
+ * earned: it is the single decision the rest of the pipeline is built
+ * around.
+ *
+ * The rationale text is generated here, in the frontend, from real
  * ProfileCard fields (problem_type, primary_metric, class_balance_ratio) -
  * there is no rationale string anywhere in the API. Every number quoted is
- * the real class_balance_ratio, never a hardcoded copy of the backend's
- * band thresholds (BALANCE_ACCURACY_MAX, BALANCE_F1_MAX in heuristics.py),
- * so this stays correct even if those constants are retuned later.
+ * the real class_balance_ratio, never a hardcoded copy of the backend's band
+ * thresholds (BALANCE_ACCURACY_MAX, BALANCE_F1_MAX in heuristics.py), so
+ * this stays correct if those constants are retuned later.
  *
- * Section 25 again: never "AI recommends X" - this is a deterministic
- * function of the profile, attributed to dataset analysis, not a model.
+ * Never "AI recommends X": this is a deterministic function of the profile,
+ * attributed to dataset analysis, not to a model. And the rationale is
+ * always on screen - never behind a tooltip.
  */
 
+import { SparkleIcon } from "../shared/icons";
 import type { Metric, ProblemType } from "../../types";
 
 const METRIC_LABEL: Record<Metric, string> = {
   accuracy: "Accuracy",
   f1: "F1 Score",
-  f1_macro: "F1 Score (macro)",
+  f1_macro: "F1 Macro",
   pr_auc: "PR-AUC",
   roc_auc: "ROC-AUC",
   rmse: "RMSE",
@@ -26,7 +33,7 @@ const METRIC_LABEL: Record<Metric, string> = {
 
 function rationale(problemType: ProblemType, metric: Metric, ratio: number | null): string {
   if (problemType === "regression") {
-    return "This target is continuous, so RMSE reports prediction error in the target's own units.";
+    return "This target is continuous, so the primary metric reports prediction error in the target's own units.";
   }
   if (problemType === "multiclass_classification") {
     return "This target has more than two classes, so the primary metric averages performance across every class equally rather than using a measure defined only for two.";
@@ -53,21 +60,39 @@ export function MetricPanel({
   classBalanceRatio: number | null;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
-      <p className="text-caption font-caption uppercase tracking-wide text-text-tertiary">
+    // No h-full: the panel sizes to its own content. Matching the height of
+    // whatever happens to sit beside it leaves a large empty blue field, which
+    // reads as a rendering fault rather than as emphasis.
+    <section className="rounded-lg bg-accent p-6 text-white">
+      <p className="label-caps flex items-center gap-2 text-white/75">
+        <SparkleIcon className="size-4" />
         Recommended by dataset analysis
       </p>
-      <p className="mt-2 text-display font-display text-text-primary">
+
+      <h2 className="mt-5 text-heading font-heading text-white/85">Optimizing for</h2>
+      <p className="mt-1 font-mono text-[2.5rem] font-bold leading-tight tracking-tight">
         {METRIC_LABEL[primaryMetric]}
       </p>
-      <p className="mt-3 max-w-[var(--prose-max-width)] text-secondary-size leading-relaxed text-text-secondary">
+
+      <p className="mt-4 text-secondary-size leading-relaxed text-white/90">
         {rationale(problemType, primaryMetric, classBalanceRatio)}
       </p>
+
       {secondaryMetrics.length > 0 ? (
-        <p className="mt-4 text-caption text-text-tertiary">
-          Also reported: {secondaryMetrics.map((metric) => METRIC_LABEL[metric]).join(", ")}
-        </p>
+        <div className="mt-6 border-t border-white/25 pt-4">
+          <p className="label-caps mb-2 text-white/75">Also reported</p>
+          <div className="flex flex-wrap gap-1.5">
+            {secondaryMetrics.map((metric) => (
+              <span
+                key={metric}
+                className="rounded-tag bg-white/15 px-2 py-1 font-mono text-data-sm text-white"
+              >
+                {METRIC_LABEL[metric]}
+              </span>
+            ))}
+          </div>
+        </div>
       ) : null}
-    </div>
+    </section>
   );
 }
